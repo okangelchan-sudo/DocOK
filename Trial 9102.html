@@ -1,0 +1,4306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Document Control and Approval System</title>
+<link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,AA">
+<style>
+
+#loginPage table, 
+#loginPage #pendingReviewBlock, 
+#loginPage #pendingReviewTable, 
+#loginPage #pendingApprovalTable, 
+#loginPage #pendingReadTable { 
+    display: none !important; 
+}
+
+documentTable td select.authorsSelect,
+documentTable td select.reviewerSelect, 
+documentTable td select.approverSelect {
+  max-width: 100% !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 2px 4px !important;
+  font-size: 0.85em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+
+documentTable td .authorsSelect select,
+documentTable td .approverSelect select {
+  width: 100% !important;
+  font-size: 0.75em !important;
+  padding: 1px 2px !important;
+  margin-bottom: 1px !important;
+  box-sizing: border-box !important;
+}
+
+documentTable td {
+  max-width: 120px !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+
+select.rightsSelect {
+  max-width: 120px; /* or a value that fits your layout */
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body { font-family: Arial, sans-serif; margin: 20px; position: relative; }
+label, input, button, select, textarea { display: block; margin: 5px 0; }
+input, select, textarea { width: 320px; padding: 6px; }
+#registrationPage, #loginPage, #adminSection, #userSection { display: none; }
+.btn { padding: 6px 12px; cursor: pointer; margin-top: 10px; transition: transform 0.1s ease; }
+.btn:active { transform: scale(0.95); }
+.btn-danger { background-color: #f44336; color: white; border: none; }
+.btn-upload { background-color: #4caf50; color: white; border: none; }
+.btn-approve, .btn-mark-read { background-color: #4caf50; color: white; border: none; padding: 5px 10px; cursor: pointer; }
+
+    .btn-mark-read, .btn-acknowledge, .btn-approve {
+        background-color: #4caf50; 
+        color: white; 
+        border: none; 
+        padding: 5px 10px; 
+        cursor: pointer; 
+        font-size: 0.85em; 
+        border-radius: 3px; 
+    }
+
+
+
+#dropZone {
+  margin: 15px 0; padding: 20px; border: 2px dashed #aaa; color: #888; text-align: center;
+  cursor: pointer; user-select: none;
+}
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th, td {
+  border: 1px solid #ccc; padding: 8px; text-align: left; vertical-align: middle;
+  max-width: 180px; word-break: break-word;
+}
+th { background-color: #f4f4f4; font-weight: bold; }
+
+/* Add these styles to narrow the checkbox column with 2mm margins */
+#documentTable th:first-child {
+  width: calc(16px + 4mm); /* checkbox width plus left and right 2mm margins */
+  padding-left: 2mm;
+  padding-right: 2mm;
+  text-align: center;
+}
+
+#documentTable th:first-child,
+#documentTable td:first-child,
+#userTable th:first-child,
+#userTable td:first-child {
+  width: 1cm;
+  padding-left: 2mm;
+  padding-right: 2mm;
+  text-align: center;
+  white-space: nowrap;
+}
+
+#documentTable th:first-child input[type="checkbox"],
+#documentTable td:first-child input[type="checkbox"],
+#userTable th:first-child input[type="checkbox"],
+#userTable td:first-child input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+}
+
+#documentTable,
+#userTable {
+  table-layout: fixed;
+}
+
+
+/* Continue existing styles below */
+.link-text { color: blue; cursor: pointer; text-decoration: underline; margin-top: 10px; display: inline-block; }
+#messages {
+  height: auto;
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+   transform: translate(-50%, -50%) !important;
+  color: red;
+  background-color: white;
+  border: 1px solid red;
+  padding: 10px 20px;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+ display: none !important; /* when shown */
+  z-index: 5000 !important; /* or higher */
+}
+
+a.filePathLink {
+  font-size: 0.85em;
+  color: #0645ad;
+  text-decoration: underline;
+  max-width: 400px;
+  word-break: break-word;
+  cursor: pointer;
+}
+#pageLogo {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  max-width: 5cm;
+  max-height: 5cm;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border: 1px solid #ccc;
+  z-index: 9999;
+  display: block;
+  background: white;
+}
+
+/* OBSOLETE DOCUMENTS - RED BOLD */
+.obsolete-row { color: #dc3545 !important; font-weight: bold !important; }
+.obsolete-name { color: #dc3545 !important; font-weight: bold !important; text-decoration: line-through !important; }
+.review-due-row { color: #dc3545 !important; font-weight: bold !important; background-color: #ffebee !important; }
+
+
+.approval-sent, .btn-submit-approval {
+  cursor: help !important;
+  pointer-events: auto !important;
+  font-size: 0.75em !important;
+}
+
+/* 3cm x 5cm GLOWING HISTORY BUTTON ONLY */  
+.btn-history-full {  <!--NEW INSERT-->
+  background: linear-gradient(145deg, #90EE90, #98FB98) !important;
+  color: #000 !important;
+  border: 2px solid #32CD32 !important;
+  border-radius: 10px !important;
+  width: 30mm !important;  
+  height: 50mm !important; 
+  font-size: 0.85em !important;
+  font-weight: bold !important;
+  padding: 8px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  box-shadow: 0 0 20px rgba(50, 205, 50, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.5) !important;
+  transition: all 0.3s ease !important;
+  line-height: 1.1 !important;
+  text-align: center !important;
+}  
+.btn-history-full:hover {  <!--NEW INSERT-->
+  box-shadow: 0 0 30px rgba(50, 205, 50, 1), inset 0 0 15px rgba(255, 255, 255, 0.7) !important;
+  transform: scale(1.02) !important;
+} 
+
+
+
+
+/* NEW Export Layout - Browse LEFT + Exports RIGHT BELOW */
+.btn-export-compact { 
+  font-size: 0.85em !important; 
+  padding: 6px 10px !important; 
+  min-width: 120px !important; 
+  width: 120px !important; 
+}
+#dropZone { 
+  margin: 15px 0 !important; 
+  padding: 20px !important; 
+  min-height: 80px !important;
+  border: 2px dashed #aaa !important;
+  color: #888 !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  user-select: none !important;
+}
+
+/* DIMMED History Button (Pending Actions) */
+.btn-history-dimmed {
+  background: #ccc !important;
+  color: #666 !important;
+  border: 2px solid #aaa !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+  width: 30mm !important; 
+  height: 50mm !important;
+}
+
+</style>
+
+ <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<img id="pageLogo" alt="Logo" src="https://i.imgur.com/nWv67hp.png" />
+
+
+<h1>DocOK Document Control & Approval System</h1>
+
+
+<div id="loginPage">
+  <h2>Login</h2>
+  <form id="loginForm">
+    <label for=loginCorpId>CORP ID</label>
+<input type=text id=loginCorpId required autocomplete="off">
+<label for=loginPassword>Password</label>
+<input type=password id=loginPassword required autocomplete="off">
+    <button type="submit" class="btn">Login</button>
+  </form>
+  <div>
+    Not registered? <span class="link-text" id="goToRegister">Click here to register</span>
+  </div>
+
+<div style="margin-top:10px;">
+  Forgot password? <span class="link-text" id="forgotPasswordLink">Click here to reset</span>
+</div>
+
+  <div id="loginMsg"></div>
+</div>
+
+<div id="registrationPage">
+      <h2>User Registration</h2>
+  <form id="regForm">
+    <label for="fullName">Full Name:</label>
+    <input type="text" id="fullName" required />
+    <label for="regCorpId">CORP ID:</label>
+    <input type="text" id="regCorpId" required />
+    <label for="regEmail">Email:</label>
+    <input type="email" id="regEmail" required />
+    <label for="regPassword">Password:</label>
+    <input type="password" id="regPassword" required />
+    <label for="confirmPassword">Confirm Password:</label>
+    <input type="password" id="confirmPassword" required />
+    <label for="regRole">Role:</label>
+    <select id="regRole" required>
+      <option value="user">User</option>
+      <option value="admin">Administrator</option>
+    </select>
+
+
+<label for="secretQuestion">Secret Question</label>
+<select id="secretQuestion" required>
+  <option value="">-- Select a question --</option>
+  <option value="motherMaiden">What is your mother's maiden name?</option>
+  <option value="firstPet">What was the name of your first pet?</option>
+  <option value="birthCity">In which city were you born?</option>
+  <option value="favTeacher">Who was your favorite teacher?</option>
+</select>
+
+<label for="secretAnswer">Answer to Secret Question</label>
+<input type="text" id="secretAnswer" required>
+
+  </form>
+  <button type="submit" form="regForm" class="btn">Register</button>
+  <div>
+    Already registered? <span class="link-text" id="goToLoginReg">Click here to login</span>
+  </div>
+  <div id="regMsg"></div>
+</div>
+
+<div id="passwordResetPage" style="display:none;">
+  <h2>Reset Password</h2>
+  <form id="passwordResetForm">
+    <label for="resetCorpId">Enter your CORP ID:</label>
+    <input type="text" id="resetCorpId" required />
+
+    <button type="button" id="fetchSecretQuestionBtn" class="btn">Fetch Secret Question</button>
+
+    <p id="displaySecretQuestion" style="margin-top: 10px; font-weight: bold;display: none;"></p>
+
+    <label for="resetSecretAnswer" style="display:none;">Answer to Secret Question:</label>
+    <input type="text" id="resetSecretAnswer" style="display:none;" required />
+
+    <label for="resetNewPassword" style="display:none;">New Password:</label>
+    <input type="password" id="resetNewPassword" style="display:none;" required />
+
+    <label for="resetConfirmPassword" style="display:none;">Confirm New Password:</label>
+    <input type="password" id="resetConfirmPassword" style="display:none;" required />
+
+    <button type="submit" id="submitNewPasswordBtn" class="btn" style="display:none;">Set New Password</button>
+  </form>
+  <div id="resetMessage" style="color:red; margin-top: 10px;"></div>
+  <span class="link-text" id="returnToLogin">Return to login</span>
+</div>
+
+<div id="adminSection">
+  <h2>Administrator Dashboard</h2>
+  <button id="adminLogout" class="btn btn-danger">Logout</button>
+  <button id="adminRefresh" class="btn btn-upload" style="margin-left: 10px;">Refresh</button>
+  <button id="adminToUserViewBtn" title="Open User Dashboard View" onclick="showPage('user')" class="btn">Switch to User Dashboard</button>
+
+
+<h3>Upload Documents</h3>
+<div id="dropZone" tabindex="0">Drag & drop files here or click to select files to upload</div>
+
+<!-- NEW Buttons BELOW Drop Zone - FIXED -->
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin: 15px 0;">
+  
+  <!-- LEFT: Browse Files (UNCHANGED POSITION) -->
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <button id="browseFilesBtn" class="btn btn-upload" style="white-space: nowrap;">Browse Files</button>
+  </div>
+
+  <!-- RIGHT: History(5cm) + Exports GROUP -->
+  <div style="display: flex; align-items: flex-start; gap: 10mm;">
+    <!-- SINGLE 5cm History Button -->
+    <button id="exportHistoryCSV" class="btn-history-full" title="Export Document History (All Reviews+Approvals+Reads)">
+      Export<br>Document<br>History<br>CSV
+    </button>
+    
+    <!-- 3 Export Buttons (UNCHANGED) -->
+    <div style="display: flex; flex-direction: column; gap: 5px; min-width: 140px;">
+      <button id="exportApprovalsCSV" class="btn btn-upload btn-export-compact" title="Export selected docs approvals">Export Approvals CSV</button>
+      <button id="exportReadsCSV" class="btn btn-upload btn-export-compact" title="Export selected docs reads">Export Reads CSV</button>
+      <button id="exportReviewsCSV" class="btn btn-upload btn-export-compact" title="Export selected docs reviews">Export Reviews CSV</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" multiple style="display:none">
+
+
+ <h3>Documents List</h3>
+<div style="display: flex; align-items: center; margin-bottom: 10px; gap: 15px;">
+  <label for="sortSelect">Sorted by:</label>
+  <select id="sortSelect" style="margin-left: 5px">
+    <option value="docName">Document Name</option>         <!-- 2. Column 2 -->
+    <option value="author">Author</option>                 <!-- 3. Column 3 -->
+    <option value="reviewer">Reviewer</option>             <!-- 4. Column 4 -->
+    <option value="approver">Approvers</option>            <!-- 5. Column 5 -->
+    <option value="approvalDate">Approval Date</option>    <!-- 6. Column 6 -->
+    <option value="nextReviewDate">Next Review Date</option> <!-- 7. Column 7 -->
+    <option value="reviewReq">Review Requests</option>     <!-- 8. Column 8 -->
+    <option value="approvalReq">Approval Requests</option> <!-- 9. Column 9 -->
+    <option value="readReq">Read Requests</option>         <!-- 10. Column 10 -->
+    <option value="readsCount">Reads Count</option>        <!-- 11. Column 11 -->
+  </select>
+  <label for="sortDirectionSelect">Sorting Order</label>
+  <select id="sortDirectionSelect" style="margin-left: 5px">
+    <option value="asc">Ascending</option>
+    <option value="desc">Descending</option>
+  </select>
+</div>
+
+
+<table id="documentTable">
+  <thead>
+    <tr>
+      <th style="width:20px"><input type="checkbox" id="selectAllDocs"></th>
+      <th>Document Name</th>
+      <th>Author</th>
+      <th>Reviewer</th>
+      <th>Approvers</th>
+      <th>Approval Date</th>
+      <th>Next Review Date</th>
+      <th>Review Requests
+        <button id="submitAllReview" class="btn-submit-all" title="Submit Review Requests for Selected Docs" style="font-size:0.7em;padding:2px 4px;margin-left:4px">Submit All</button>
+      </th>
+      <th>Approval Requests
+        <button id="submitAllApproval" class="btn-submit-all" title="Submit Approval Requests for Selected Docs" style="font-size:0.7em;padding:2px 4px;margin-left:4px">Submit All</button>
+      </th>
+      <th>Read Requests
+        <button id="submitAllRead" class="btn-submit-all" title="Submit Read Requests for Selected Docs" style="font-size:0.7em;padding:2px 4px;margin-left:4px">Submit All</button>
+      </th>
+      <th>Reads Count</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+  <div id="paginationContainer">
+    <label for="paginationSelect">Page: </label>
+    <select id="paginationSelect"></select>
+  </div>
+
+<h3>Registered Users</h3>                                              <!-- <-- CHANGED -->
+<table id="userTable">                                                 <!-- <-- CHANGED -->
+  <thead>                                                              <!-- <-- CHANGED -->
+    <tr>                                                               <!-- <-- CHANGED -->
+      <th><input type="checkbox" id="usersSelectAll"></th>             <!-- <-- CHANGED -->
+      <th>Full Name</th>                                               <!-- <-- CHANGED -->
+      <th>CORP ID</th>                                                 <!-- <-- CHANGED -->
+      <th>Email</th>                                                   <!-- <-- CHANGED -->
+      <th>Rights</th>                                                  <!-- <-- CHANGED -->
+      <th>Actions</th>                                                 <!-- <-- CHANGED -->
+    </tr>                                                              <!-- <-- CHANGED -->
+  </thead>                                                             <!-- <-- CHANGED -->
+  <tbody></tbody>                                                      <!-- <-- CHANGED -->
+</table>                                                               <!-- <-- CHANGED -->
+
+<div id="userPaginationContainer" style="margin-top: 10px; display: none;">
+  <label for="userPaginationSelect">Page: </label>
+  <select id="userPaginationSelect"></select>
+</div>
+
+
+</div>
+
+<div id="userSection">
+  <h2>User Dashboard</h2>
+  <button id="userLogout" class="btn btn-danger">Logout</button>
+  <button id="userBackToAdminBtn" style="display:none;">Back to Admin Dashboard</button>
+
+  <!-- PENDING READ DOCUMENTS -->
+  <h3>Pending Read Documents</h3>
+  <button id="refreshPendingRead" class="btn btn-upload" style="margin-bottom:10px;">Refresh</button>
+  <!-- User Read Sort Controls -->
+  <div style="margin-bottom:5px;">
+    <label>Sorted by: 
+      <select id="userReadSortBy">
+        <option value="docName">Document Name</option>
+        <option value="actionTime">Action</option>
+      </select>
+    </label>
+    <label style="margin-left:10px;">Order: 
+      <select id="userReadSortDir">
+        <option value="asc">Ascending</option>
+        <option value="desc">Descending</option>
+      </select>
+    </label>
+  </div>
+  <table id="pendingReadTable">
+    <thead>
+      <tr>
+        <th>Document Name</th>
+        <th>Action</th>
+        <th><input type="checkbox" id="selectAllPendingReads"></th>   
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <button id="readAllBtn" class="btn btn-upload" style="margin-top:5px; float:right;">Mark Selected as Read</button>
+  <div id="userReadPaginationContainer" style="display:none;">
+    <label for="userReadPaginationSelect">Page: </label>
+    <select id="userReadPaginationSelect"></select>
+  </div>
+
+  <!-- PENDING REVIEW DOCUMENTS -->
+  <div id="pendingReviewBlock">
+    <h3>Pending Review Documents</h3>
+    <button id="refreshPendingReview" class="btn btn-upload" style="margin-bottom:10px;">Refresh</button>
+    <!-- User Review Sort Controls -->
+    <div style="margin-bottom:5px;">
+      <label>Sorted by: 
+        <select id="userReviewSortBy">
+          <option value="docName">Document Name</option>
+          <option value="actionTime">Action</option>
+        </select>
+      </label>
+      <label style="margin-left:10px;">Order: 
+        <select id="userReviewSortDir">
+          <option value="asc">Ascending</option>
+          <option value="desc">Descending</option>
+        </select>
+      </label>
+    </div>
+    <table id="pendingReviewTable">
+      <thead>
+        <tr>
+          <th>Document Name</th>
+          <th>Action</th>
+          <th><input type="checkbox" id="selectAllPendingReviews"></th>  
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button id="reviewAllBtn" class="btn btn-upload" style="margin-top:5px;float:right;">Acknowledge Selected</button>
+    <div id="userReviewPaginationContainer" style="display:none;">
+      <label for="userReviewPaginationSelect">Page</label>
+      <select id="userReviewPaginationSelect"></select>
+    </div>
+  </div>
+
+  <!-- PENDING APPROVAL DOCUMENTS -->
+  <div>
+    <h3>Pending Approval Documents</h3>
+    <button id="refreshPendingApproval" class="btn btn-upload" style="margin-bottom:10px;">Refresh</button>
+    <!-- User Approval Sort Controls -->
+    <div style="margin-bottom:5px;">
+      <label>Sorted by: 
+        <select id="userApprovalSortBy">
+          <option value="docName">Document Name</option>
+          <option value="actionTime">Action</option>
+        </select>
+      </label>
+      <label style="margin-left:10px;">Order: 
+        <select id="userApprovalSortDir">
+          <option value="asc">Ascending</option>
+          <option value="desc">Descending</option>
+        </select>
+      </label>
+    </div>
+    <table id="pendingApprovalTable">
+      <thead>
+        <tr>
+          <th>Document Name</th>
+          <th>Action</th>
+          <th><input type="checkbox" id="selectAllPendingApprovals"></th>  
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button id="approveAllBtn" class="btn btn-upload" style="margin-top:5px; float:right;">Approve Selected</button>
+    <div id="userApprovalPaginationContainer" style="display:none;">
+      <label for="userApprovalPaginationSelect">Page: </label>
+      <select id="userApprovalPaginationSelect"></select>
+    </div>
+  </div>
+
+  <div style="clear:both"></div>
+</div>
+
+<div id="messages"></div>
+<script>
+
+let users = [];
+let documents = [];
+let approvals = {};
+let currentUser = null;
+const PAGE_SIZE = 20;
+let currentPage = 1;
+let sortDirection = 'asc';  
+let obsoleteCheckTimer = null;
+let sortBy = 'docName';     
+let currentUserApprovalPage = 1;
+let currentUserReadPage = 1;
+let currentUserReviewPage = 1;
+let isDeleting = false; 
+const loginPage = document.getElementById('loginPage');
+const registrationPage = document.getElementById('registrationPage');
+const adminSection = document.getElementById('adminSection');
+const userSection = document.getElementById('userSection');
+const pageLogo = document.getElementById('pageLogo');
+const loginForm = document.getElementById('loginForm');
+const assignRequestBtn = document.getElementById('assignRequestBtn'); 
+
+// 24-hour date-time formatter  <-- CHANGED
+function formatDateTime24(dt) {              // <-- CHANGED
+  if (!(dt instanceof Date)) dt = new Date(dt);  // <-- CHANGED
+  return dt.toLocaleString('en-GB', {        // <-- CHANGED
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false                            // <-- CHANGED
+  });
+}
+
+pageLogo.addEventListener('contextmenu', (e) => e.preventDefault());
+pageLogo.addEventListener('dragstart', (e) => e.preventDefault());
+pageLogo.addEventListener('selectstart', (e) => e.preventDefault());
+pageLogo.style.userSelect = 'none';
+const regForm = document.getElementById('regForm');
+const messagesEl = document.getElementById('messages');
+const goToRegister = document.getElementById('goToRegister');
+const goToLoginReg = document.getElementById('goToLoginReg');
+const browseFilesBtn = document.getElementById('browseFilesBtn');
+const fileInput = document.getElementById('fileInput');
+const documentTableBody = document.querySelector('#documentTable tbody');
+const userTableBody = document.querySelector('#userTable tbody');
+const selectAllDocsCheckbox = document.getElementById('selectAllDocs');
+const usersSelectAllCheckbox = document.getElementById('usersSelectAll');
+const refreshPendingApprovalBtn = document.getElementById('refreshPendingApproval');
+const refreshPendingReadBtn = document.getElementById('refreshPendingRead');
+const refreshPendingReviewBtn = document.getElementById('refreshPendingReview');
+const submitAllReviewBtn = document.getElementById('submitAllReview');
+const submitAllApprovalBtn = document.getElementById('submitAllApproval');
+const submitAllReadBtn = document.getElementById('submitAllRead');
+const approvalTableBody = document.querySelector('#pendingApprovalTable tbody');
+submitAllReviewBtn.onclick = () => submitAllRequests('review');
+submitAllApprovalBtn.onclick = () => submitAllRequests('approval');
+submitAllReadBtn.onclick = () => submitAllRequests('read');
+const readTableBody = document.querySelector('#pendingReadTable tbody');
+const reviewTableBody = document.querySelector('#pendingReviewTable tbody');
+
+const exportApprovalsCSVBtn = document.getElementById('exportApprovalsCSV');
+const exportReadsCSVBtn = document.getElementById('exportReadsCSV');
+const exportReviewsCSVBtn = document.getElementById('exportReviewsCSV');
+
+// ✅ ADD: Universal CSV Download Function (MUST ADD FIRST)
+function downloadCSV(csvContent, filename) {
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ✅ FIX 1: Approvals CSV (Selected Docs)
+exportApprovalsCSVBtn.onclick = function() {
+  const selectedDocNames = Array.from(document.querySelectorAll('.docSelectCheckbox:checked')).map(chk => chk.dataset.docname);
+  if(selectedDocNames.length === 0) { alert('Select at least one document to export approvals CSV.'); return; }
+  let csv = 'Document,User,Action,Approval date and time\n';
+  selectedDocNames.forEach(docName => {
+    approvals[docName]?.approvedBy?.forEach(a => csv += `"${docName}","${a.fullName}","Approved","${a.timestamp}"\n`);
+    approvals[docName]?.approveRequestedBy?.forEach(cid => {
+      const u = users.find(u => u.corpId === cid);
+      if(u) csv += `"${docName}","${u.fullName}","Request Approve",""\n`;
+    });
+  });
+  downloadCSV(csv, 'Approvals.csv');
+}
+
+// ✅ FIX 2: Reads CSV (Selected Docs)
+exportReadsCSVBtn.onclick = function() {
+  const selectedDocNames = Array.from(document.querySelectorAll('.docSelectCheckbox:checked')).map(chk => chk.dataset.docname);
+  if(selectedDocNames.length === 0) { alert('Select at least one document to export reads CSV.'); return; }
+  let csv = 'Document,User,Action,Read date and time\n';
+  selectedDocNames.forEach(docName => {
+    approvals[docName]?.readBy?.forEach(r => csv += `"${docName}","${r.fullName}","Read","${r.timestamp}"\n`);
+  });
+  downloadCSV(csv, 'Reads.csv');
+}
+
+// ✅ FIX 3: Reviews CSV (SELECTED Docs ONLY)
+exportReviewsCSVBtn.onclick = function() {
+  const selectedDocNames = Array.from(document.querySelectorAll('.docSelectCheckbox:checked')).map(chk => chk.dataset.docname);
+  if(selectedDocNames.length === 0) { alert('Select at least one document to export reviews CSV.'); return; }
+  let csv = 'Document,User,Action,Review date and time\n';
+  selectedDocNames.forEach(docName => {
+    approvals[docName]?.reviewedBy?.forEach(r => csv += `"${docName}","${r.fullName}","Acknowledge","${r.timestamp}"\n`);
+  });
+  downloadCSV(csv, 'Reviews.csv');
+}
+
+// ✅ NEW: Check if ALL requested actions completed
+function isHistoryExportReady() {
+  const allCids = users.map(u => u.corpId.toLowerCase());
+  
+  for (const docName of Object.keys(approvals)) {
+    const appr = approvals[docName];
+    
+    // Check ALL Read requests completed
+    if (appr.readRequestedBy?.length > 0) {
+      const pendingReads = appr.readRequestedBy.filter(cid => 
+        !appr.readBy?.some(r => r.corpId.toLowerCase() === cid)
+      );
+      if (pendingReads.length > 0) return false;
+    }
+    
+    // Check ALL Review requests completed  
+    if (appr.reviewRequestedBy?.length > 0) {
+      const pendingReviews = appr.reviewRequestedBy.filter(cid => 
+        !appr.reviewedBy?.some(r => r.corpId.toLowerCase() === cid)
+      );
+      if (pendingReviews.length > 0) return false;
+    }
+    
+    // Check ALL Approval requests completed
+    if (appr.approveRequestedBy?.length > 0) {
+      const pendingApprovals = appr.approveRequestedBy.filter(cid => 
+        !appr.approvedBy?.some(a => a.corpId.toLowerCase() === cid)
+      );
+      if (pendingApprovals.length > 0) return false;
+    }
+  }
+  return true;
+}
+
+// ✅ History Button - Dimmed until ALL actions complete
+function updateHistoryButton() {
+  const btn = document.getElementById('exportHistoryCSV');
+  // Safe guards so login/user pages are not affected
+  if (!btn) return;                                  // button not in DOM yet
+  if (!adminSection || adminSection.style.display === 'none') return; // not on admin page
+
+  const isReady = isHistoryExportReady();
+  
+  if (isReady) {
+    btn.classList.remove('btn-history-dimmed');
+    btn.classList.add('btn-history-full');
+    btn.disabled = false;
+    btn.style.cursor = 'pointer';
+  } else {
+    btn.classList.remove('btn-history-full');
+    btn.classList.add('btn-history-dimmed');
+    btn.disabled = true;
+    btn.style.cursor = 'not-allowed';
+  }
+}
+
+function isHistoryExportReady() {                            // <--CHANGED
+  const selectedRow = document.querySelector('#documentsTable tbody tr.selected'); // <--CHANGED
+  if (!selectedRow) {                                        // <--CHANGED
+    return false;                                            // <--CHANGED
+  }                                                          // <--CHANGED
+  const selectedDocName = selectedRow.getAttribute('data-doc-name'); // <--CHANGED
+  if (!selectedDocName || !approvals[selectedDocName]) {     // <--CHANGED
+    return false;                                            // <--CHANGED
+  }                                                          // <--CHANGED
+
+  const docApprovals = approvals[selectedDocName];           // <--CHANGED
+
+  // Check Read requests vs Read actions                      // <--CHANGED
+  const readRequested = (docApprovals.readRequestedBy || []); // <--CHANGED
+  const readBy = (docApprovals.readBy || []);                // <--CHANGED
+  const allReadsDone = readRequested.every(req =>            // <--CHANGED
+    readBy.some(r => r.corpId && r.corpId.toLowerCase() === req.corpId.toLowerCase()) // <--CHANGED
+  );                                                         // <--CHANGED
+
+  // Check Review requests vs Review actions                  // <--CHANGED
+  const reviewRequested = (docApprovals.reviewRequestedBy || []); // <--CHANGED
+  const reviewedBy = (docApprovals.reviewedBy || []);        // <--CHANGED
+  const allReviewsDone = reviewRequested.every(req =>        // <--CHANGED
+    reviewedBy.some(r => r.corpId && r.corpId.toLowerCase() === req.corpId.toLowerCase()) // <--CHANGED
+  );                                                         // <--CHANGED
+
+  // Check Approval requests vs Approval actions              // <--CHANGED
+  const approveRequested = (docApprovals.approveRequestedBy || []); // <--CHANGED
+  const approvedBy = (docApprovals.approvedBy || []);        // <--CHANGED
+  const allApprovalsDone = approveRequested.every(req =>     // <--CHANGED
+    approvedBy.some(a => a.corpId && a.corpId.toLowerCase() === req.corpId.toLowerCase()) // <--CHANGED
+  );                                                         // <--CHANGED
+
+  return allReadsDone && allReviewsDone && allApprovalsDone; // <--CHANGED
+} 
+
+
+
+
+// Use safe lookup for click as well
+const exportHistoryCSVBtn = document.getElementById('exportHistoryCSV');
+if (exportHistoryCSVBtn) {
+  exportHistoryCSVBtn.onclick = function() {
+    if (!isHistoryExportReady()) {                           // <--CHANGED (kept, must stay)
+      alert('Waiting for pending Read/Acknowledge/Approval actions.'); // <--CHANGED
+      return;                                                // <--CHANGED
+    }
+    
+    let csv = 'Document,User,Action,Timestamp\n';
+    
+    // ALL Reviews (Acknowledge)
+    Object.keys(approvals).forEach(docName => {
+      approvals[docName]?.reviewedBy?.forEach(r => {
+        csv += `"${docName}","${r.fullName}","Review Acknowledged","${r.timestamp}"\n`;
+      });
+    });
+    
+    // ALL Approvals
+    Object.keys(approvals).forEach(docName => {
+      approvals[docName]?.approvedBy?.forEach(a => {
+        csv += `"${docName}","${a.fullName}","Approved","${a.timestamp}"\n`;
+      });
+    });
+    
+    // ALL Reads
+    Object.keys(approvals).forEach(docName => {
+      approvals[docName]?.readBy?.forEach(r => {
+        csv += `"${docName}","${r.fullName}","Read","${r.timestamp}"\n`;
+      });
+    });
+    
+    downloadCSV(csv, 'Document-History-Complete.csv');
+    showMessage('Complete history exported!', false);
+  };
+}
+
+
+
+const adminLogoutBtn = document.getElementById('adminLogout');const userLogoutBtn = document.getElementById('userLogout');
+const paginationSelect = document.getElementById('paginationSelect');
+const paginationContainer = document.getElementById('paginationContainer');
+const adminToUserViewBtn = document.getElementById('adminToUserViewBtn');
+const userBackToAdminBtn = document.getElementById('userBackToAdminBtn');
+const userApprovalPaginationContainer = document.getElementById('userApprovalPaginationContainer');
+const userApprovalPaginationSelect = document.getElementById('userApprovalPaginationSelect');
+const userReadPaginationContainer = document.getElementById('userReadPaginationContainer');
+const userReadPaginationSelect = document.getElementById('userReadPaginationSelect');
+const userApprovalSortBy = document.getElementById('userApprovalSortBy'); 
+const userApprovalSortDir = document.getElementById('userApprovalSortDir');
+const userReadSortBy = document.getElementById('userReadSortBy');
+const userReadSortDir = document.getElementById('userReadSortDir');
+const userReviewSortBy = document.getElementById('userReviewSortBy');
+const userReviewSortDir = document.getElementById('userReviewSortDir');
+
+userApprovalSortBy.addEventListener('change', () => {
+  renderUserDocuments();
+});
+userApprovalSortDir.addEventListener('change', () => {
+  renderUserDocuments();
+});
+
+userReadSortBy.addEventListener('change', () => {
+  renderUserReads();
+});
+userReadSortDir.addEventListener('change', () => {
+  renderUserReads();
+});
+
+userReviewSortBy.addEventListener('change', () => {
+  renderUserReviews();
+});
+userReviewSortDir.addEventListener('change', () => {
+  renderUserReviews();
+});
+
+const selectAllPendingApprovalsCheckbox = document.getElementById('selectAllPendingApprovals');
+const selectAllPendingReadsCheckbox = document.getElementById('selectAllPendingReads');
+const selectAllPendingReviewsCheckbox = document.getElementById('selectAllPendingReviews');
+const readAllBtn = document.getElementById('readAllBtn');
+const reviewAllBtn = document.getElementById('reviewAllBtn');
+const approveAllBtn = document.getElementById('approveAllBtn');
+approveAllBtn.onclick = () => submitAllRequests('approval');
+document.getElementById('selectAllPendingReads').addEventListener('change', function() {
+  const checkboxes = document.querySelectorAll('.pendingReadCheckbox');
+  checkboxes.forEach(cb => cb.checked = this.checked);
+});
+document.getElementById('selectAllPendingReviews').addEventListener('change', function() {
+  const checkboxes = document.querySelectorAll('.pendingReviewCheckbox');
+  checkboxes.forEach(cb => cb.checked = this.checked);
+});
+
+selectAllDocsCheckbox.addEventListener('change', async function(e) {
+  const checked = e.target.checked;
+ document.querySelectorAll('.docSelectCheckbox').forEach(chk => chk.checked = checked);
+});
+
+submitAllReviewBtn.onclick = () => submitAllRequests('review');
+submitAllApprovalBtn.onclick = () => submitAllRequests('approval');
+submitAllReadBtn.onclick = () => submitAllRequests('read');
+
+
+// ✅ NEW INSERT - REFRESH BUTTON EVENT LISTENERS
+refreshPendingReadBtn.onclick = () => renderUserReads();
+refreshPendingReviewBtn.onclick = () => renderUserReviews();
+refreshPendingApprovalBtn.onclick = () => renderUserDocuments();
+
+// ACTION BUTTONS ✅
+
+readAllBtn.onclick = async () => {
+  const checkboxes = Array.from(document.querySelectorAll('.pendingReadCheckbox:checked'));
+  if (checkboxes.length === 0) return alert('Select documents to mark as read.');
+  
+  let changed = false;
+  for (const chk of checkboxes) {
+    const docName = chk.dataset.doc;
+    if (!approvals[docName]) approvals[docName] = {};
+    if (!approvals[docName]?.readBy?.find(r => r.corpId === currentUser.corpId)) {
+      if (!approvals[docName].readBy) approvals[docName].readBy = [];
+      approvals[docName].readBy.push({
+        corpId: currentUser.corpId, 
+        fullName: currentUser.fullName, 
+        timestamp: new Date().toLocaleString()
+      });
+      approvals[docName].readRequestedBy = approvals[docName].readRequestedBy?.filter(c => c !== currentUser.corpId) || [];
+      changed = true;
+    }
+  }
+  
+  if (changed) {
+    await saveData();  // CRITICAL: await
+    setTimeout(() => renderUserReads(), 500);  // AFTER saveData completes
+    showMessage(`${checkboxes.length} documents marked as read.`, false);
+  }
+  updateSelectAllStatus();
+};
+
+
+reviewAllBtn.onclick = async () => {
+  const checkboxes = Array.from(document.querySelectorAll('.pendingReviewCheckbox:checked'));
+  if (checkboxes.length === 0) return alert('Select documents to acknowledge.');
+  
+  let changed = false;
+  for (const chk of checkboxes) {
+    const docName = chk.dataset.doc;
+    if (!approvals[docName]) approvals[docName] = {};
+    if (!approvals[docName]?.reviewedBy?.find(r => r.corpId === currentUser.corpId)) {
+      if (!approvals[docName].reviewedBy) approvals[docName].reviewedBy = [];
+      approvals[docName].reviewedBy.push({
+        corpId: currentUser.corpId, 
+        fullName: currentUser.fullName, 
+        timestamp: new Date().toLocaleString()
+      });
+      changed = true;
+    }
+  }
+  
+  if (changed) {
+    await saveData();
+    setTimeout(() => renderUserReviews(), 500);
+    showMessage(`${checkboxes.length} reviews acknowledged.`, false);
+  }
+  updateSelectAllStatus();
+};
+
+approveAllBtn.onclick = async () => {
+  if (!currentUser?.rights?.includes('approve')) return alert('Approve rights required.');
+  const checkboxes = Array.from(document.querySelectorAll('.pendingApprovalCheckbox:checked'));
+  if (checkboxes.length === 0) return alert('Select documents to approve.');
+  
+  let changed = false;
+  for (const chk of checkboxes) {
+    const docName = chk.dataset.doc;
+    if (!approvals[docName]?.approvedBy?.find(a => a.corpId === currentUser.corpId)) {
+      if (!approvals[docName].approvedBy) approvals[docName].approvedBy = [];
+      approvals[docName].approvedBy.push({
+        corpId: currentUser.corpId, 
+        fullName: currentUser.fullName, 
+        timestamp: new Date().toLocaleString()
+      });
+      approvals[docName].approveRequestedBy = approvals[docName].approveRequestedBy?.filter(c => c !== currentUser.corpId) || [];
+      
+      const doc = documents.find(d => d.name === docName);
+      if (doc && !doc.approvedAt) doc.approvedAt = new Date();
+      changed = true;
+    }
+  }
+  
+  if (changed) {
+    await saveData();
+    setTimeout(() => renderUserDocuments(), 500);
+    showMessage(`${checkboxes.length} documents approved.`, false);
+  }
+  updateSelectAllStatus();
+};
+
+
+
+
+const SUPABASE_URL = 'https://bcxkqqoeqyruoishcmzb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjeGtxcW9lcXlydW9pc2hjbXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NzY0ODAsImV4cCI6MjA3OTU1MjQ4MH0.mkbKNPgRUrKdlagfDPqP9iMiV7tXfJX4U95bB7cad1I';
+
+let supabaseClient = null;
+let realtimeSubs = [];
+
+window.addEventListener('load', async function () {
+  if (typeof supabase !== 'undefined') {
+    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.supabase = supabaseClient;
+    console.log('Supabase ready');
+  }
+
+await loadData(); 
+updateHistoryButton();
+await checkExpiredWithRetry();
+await handleReadFromEmail();
+await handleApproveFromEmailUI();
+await handleAcknowledgeFromEmailUI();
+await handleReadRequiredFromEmailUI();
+showPage('login'); 
+
+
+  // Global expired-documents popup on login  
+  const today = new Date();                  
+  today.setHours(0, 0, 0, 0);               
+  const expiredDocs = documents.filter(doc => {              
+    if (!doc.nextReviewDate || doc.isObsolete) return false; // <--CHANGED
+    const d = new Date(doc.nextReviewDate);                  // <--CHANGED
+    d.setHours(0, 0, 0, 0);                                  // <--CHANGED
+    return d.getTime() <= today.getTime();                   // <--CHANGED
+  });                                                        // <--CHANGED
+  if (expiredDocs.length > 0) {                              // <--CHANGED
+    const names = expiredDocs.map(d => d.name).join('\n');   // <--CHANGED
+    const msg = 'Document expired. Obsolete it?\n\n' + names;// <--CHANGED
+    if (confirm(msg)) {                                      // <--CHANGED
+      const now = new Date();                                // <--CHANGED
+      expiredDocs.forEach(doc => {                           // <--CHANGED
+        if (!doc.isObsolete) {                               // <--CHANGED
+          doc.isObsolete = true;                             // <--CHANGED
+          doc.obsoleteDate = now;                            // <--CHANGED
+        }                                                    // <--CHANGED
+      });                                                    // <--CHANGED
+      await saveData();                                      // <--CHANGED
+    }                                                        // <--CHANGED
+  }                                                          // <--CHANGED
+});
+
+
+
+
+// AUTO-SYNC EVERY 5s - PROTECT USER LIST (NO FLICKER) ✅ PRODUCTION READY
+let isRenderingUsers = false;
+let lastUserDataHash = '';
+let lastDocDataHash = '';
+
+setInterval(async () => {
+  if (currentUser && !isRenderingUsers && !isDeleting) { 
+    isRenderingUsers = true;
+    const prevUserPage = currentUserPage;
+    const prevDocPage = currentPage;
+    
+        try {
+      await loadData();
+      updateHistoryButton();
+      await purgeOldObsolete();
+      
+
+// Auto-send read requests 10 minutes after approval
+const now = Date.now();
+documents.forEach(doc => {
+  if (!doc.approvedAt) return;
+  const approvedTime = new Date(doc.approvedAt).getTime();
+  if (now - approvedTime < 10 * 60 * 1000) return;  // 10 minutes
+  
+  const appr = approvals[doc.name];
+  if (!appr) return;  // Skip if no approval entry exists
+  
+  const allUsers = users.slice();
+  const allCids = allUsers.map(u => u.corpId.toLowerCase());
+  
+  // Add ALL users to read requests (deduplicated)
+  appr.readRequestedBy = Array.from(new Set([
+    ...(appr.readRequestedBy || []),
+    ...allCids
+  ]));
+  
+  // Add ALL users to assigned users (deduplicated)
+  doc.assignedUsers = Array.from(new Set([
+    ...(doc.assignedUsers || []),
+    ...allCids
+  ]));
+  
+  // Auto-send runs ONCE - next sync sees populated readRequestedBy array → skips naturally
+});
+
+    // ✅ AUTO-SEND REVIEW REQUEST 1 HOUR BEFORE NEXT REVIEW -- <-- CHANGED
+    documents.forEach(doc => {                                        
+      if (!doc.nextReviewDate || doc.isObsolete) return;              
+      const nextTime = new Date(doc.nextReviewDate).getTime();        
+      const oneHourBefore = nextTime - 5 * 60 * 1000;                 
+      if (now < oneHourBefore) return;                                
+
+      if (!approvals[doc.name]) approvals[doc.name] = {};             
+      const appr = approvals[doc.name];                               
+      if (appr.reviewRequestSentByAdmin) return;                      
+
+      if (!doc.author || !doc.reviewer) return;                       
+      const author = users.find(u => u.corpId === doc.author);        
+      const reviewer = users.find(u => u.corpId === doc.reviewer);    
+      const admin = currentUser;                                      
+      if (!author?.email || !reviewer?.email || !admin?.email) return;
+
+      const appBaseUrl = window.location.origin;                      // <--NEW INSERT
+      const sentAt = new Date().toISOString();                        // <--NEW INSERT
+      const subject = 'Document REVIEW Request';                      
+
+      const authorUrl =                                               // <--NEW INSERT
+        appBaseUrl +                                                  // <--NEW INSERT
+        '?ackDoc=' + encodeURIComponent(doc.name) +                   // <--NEW INSERT
+        '&reviewCORP_ID=' + encodeURIComponent(author.corpId) +      // <--NEW INSERT
+        '&sentAt=' + encodeURIComponent(sentAt);                     // <--NEW INSERT
+
+      const reviewerUrl =                                             // <--NEW INSERT
+        appBaseUrl +                                                  // <--NEW INSERT
+        '?ackDoc=' + encodeURIComponent(doc.name) +                   // <--NEW INSERT
+        '&reviewCORP_ID=' + encodeURIComponent(reviewer.corpId) +    // <--NEW INSERT
+        '&sentAt=' + encodeURIComponent(sentAt);                     // <--NEW INSERT
+
+      const emailBody = [                                             // <--CHANGED
+        'Dear Author and Reviewer,',                                  // <--CHANGED
+        '',                                                           // <--CHANGED
+        'The following document will expire soon. Please review.',    // <--CHANGED
+        '',                                                           // <--CHANGED
+        'Document: ' + doc.name,                                      // <--CHANGED
+        '',                                                           // <--CHANGED
+        'Author: Click <a href="' + authorUrl + '">here</a> to Acknowledge.',   // <--CHANGED
+        'Reviewer: Click <a href="' + reviewerUrl + '">here</a> to Acknowledge.', // <--CHANGED
+        '',                                                           // <--CHANGED
+        'Regards,',                                                   // <--CHANGED
+        'Document Control Officer',                                   // <--CHANGED
+        
+      ].join('\n');                                                   // <--CHANGED
+
+      const mailto = `mailto:${author.email}?cc=${reviewer.email}`    
+        + `&subject=${encodeURIComponent(subject)}`                   
+        + `&body=${encodeURIComponent(emailBody)}`;                   
+      window.open(mailto, '_blank');                                 
+
+      appr.reviewRequestedBy = [doc.author, doc.reviewer];            
+      appr.reviewRequestSentByAdmin = true;                           
+      doc.reviewRequestSent = Date.now();                             
+    });                                       
+
+    await saveData();
+
+    // Initialize hashes on first run prevents initial flicker
+    if (!lastUserDataHash) lastUserDataHash = JSON.stringify(users.map(u => ({ corpId: u.corpId, rights: u.rights })));
+
+      if (!lastDocDataHash) lastDocDataHash = JSON.stringify(documents.map(d => d.name + d.assignedUsers));
+      
+      // Only re-render if data actually changed (prevents flicker)
+      const userHash = JSON.stringify(users.map(u => u.corpId + u.rights));
+      const docHash = JSON.stringify(documents.map(d => d.name + d.assignedUsers.join(',')));  // <-- FIXED: Handle arrays
+      
+     
+       if (userSection.style.display !== 'none') {
+                const hasTimestamps = document.querySelector('.approved-timestamp, .read-timestamp, .review-timestamp'); 
+
+      }
+
+        isRenderingUsers = false;
+    if (adminSection.style.display != 'none' || 
+        (currentUser && currentUser.rights.includes('upload'))) {
+        if (userHash != lastUserDataHash) {
+            userTableBody.children.length = 0;
+            renderAdminUsers(prevUserPage);
+            lastUserDataHash = userHash;
+        }
+        if (docHash != lastDocDataHash) {
+            documentTableBody.children.length = 0;
+            renderDocumentsTable(prevDocPage);
+            lastDocDataHash = docHash;
+        }
+    }
+    // Update user section if visible
+    if (currentUser && userSection.style.display !== 'none') {
+        const hasTimestamps2 = document.querySelector('.approved-timestamp, .read-timestamp, .review-timestamp'); <!--CHANGED-->
+        if (!hasTimestamps2) { <!--CHANGED-->
+          renderUserDocuments(); <!--CHANGED-->
+          renderUserReads();     <!--CHANGED-->
+          renderUserReviews();   <!--CHANGED-->
+        } <!--CHANGED-->
+    }
+
+    } finally {
+      isRenderingUsers = false;
+      updateSelectAllStatus();
+      console.log('🔄 Auto-sync complete - Users:', users.length, 'Docs:', documents.length);
+    }
+  }
+}, 10000);
+
+
+async function loadData() {
+  if (!window.supabase) {
+    console.error('Supabase not ready');
+    return;
+  }
+  
+  try {
+      const { data: userData, error: userError } = await window.supabase
+      .from('users')
+      .select();
+    if (userError) {
+  console.error('Users load error:', userError);
+} else {
+users = userData?.map(u => {
+  const corpId = u.id;
+  const dbName = u.fullname; // Supabase column
+  const safeName = dbName && dbName.trim() ? dbName.trim() : corpId;
+
+  return {
+    id: corpId,
+    corpId,
+    fullName: safeName,
+    email: u.email,
+    password: u.password,
+    rights: u.rights ? (Array.isArray(u.rights) ? u.rights : u.rights.split(",")) : ["read"],
+    secretQuestion: u.secretquestion,
+    secretAnswer: u.secretanswer
+  };
+});
+  console.log('✅ Users loaded:', users.length);
+  updateRoleSelectionState()
+}
+
+    // ✅ DOCUMENTS - WORKING (keep same)
+    const { data: docData, error: docError } = await window.supabase
+      .from('documents')
+      .select()
+      .order('uploadTime', { ascending: false });
+    if (docError) {
+      console.error('Documents load error:', docError);
+    } else {
+
+
+    }
+
+    // ✅ APPROVALS - WORKING (keep same)
+    const { data: approvalData, error: approvalError } = await window.supabase
+      .from('approvals')
+      .select();
+    if (approvalError) {
+      console.error('Approvals load error:', approvalError);
+    } else {
+approvals = {};
+approvalData?.forEach(a => {
+  if (!a || !a.docid) return;
+  const docName = a.doc_id;
+  
+    approvals[docName] = {
+      approveRequestedBy: a.approve_requested_by ? a.approve_requested_by.split(',').filter(Boolean) : [],
+      readRequestedBy: a.read_requested_by ? a.read_requested_by.split(',').filter(Boolean) : [],
+      approvedBy: (() => { try { return a.approved_by ? JSON.parse(a.approved_by) : []; } catch { return []; } })(),
+      readBy: (() => { try { return a.read_by ? JSON.parse(a.read_by) : []; } catch { return []; } })(),
+    
+
+    // ✅ NEW REVIEW FIELDS
+    reviewRequestedBy: a.reviewrequestedby ? a.reviewrequestedby.split(',').filter(Boolean) : [],
+    reviewedBy: (() => {
+      try { return a.reviewedby ? JSON.parse(a.reviewedby) : []; } catch { return []; }
+    })()
+  };
+});
+
+}
+
+documents = docData?.map(d => ({
+  name: d.id,
+  path: d.path,
+  author: d.author,
+  reviewer: d.reviewer,
+  approvers: d.approvers ? d.approvers.split(',') : [],
+  assignedUsers: d.assignedUsers ? d.assignedUsers.split(',') : [],
+  uploadTime: d.uploadTime,
+  isObsolete: d.isobsolete || false,  
+  emailAlertSent: d.emailalertsent || false,   
+  obsoleteDate: d.obsoletedate ? new Date(d.obsoletedate) : null,  
+  nextReviewDate: d.nextreviewdate ? new Date(d.nextreviewdate) : null,  
+   approvedAt: d.approvaldate ? new Date(d.approvaldate) : null 
+})) || [];
+
+    console.log('✅ Loaded from Supabase - Users:', users.length, 'Docs:', documents.length);
+    updateRoleSelectionState();
+  } catch (error) {
+    console.error('Supabase load failed:', error);
+  }
+}
+
+
+async function saveData() {
+  if (!window.supabase) {
+    console.warn('Supabase not ready - sync skipped');
+    return;
+  }
+  
+  try {
+    // USERS - Use exact schema column names
+    try {
+      const userUpsertData = users.map(u => ({
+        id: u.corpId,
+        full_name: u.fullName || null,
+        email: u.email || null,
+        password: u.password || null,
+        rights: Array.isArray(u.rights) ? u.rights.join(',') : (u.rights || 'read'),
+        secret_question: u.secretQuestion || null,
+        secret_answer: u.secretAnswer || null
+      }));
+      const { error: userError } = await window.supabase
+        .from('users')
+        .upsert(userUpsertData, { onConflict: 'id' });
+      if (userError) console.warn('Users sync skipped:', userError.message);
+    } catch (userErr) {
+      console.warn('Users sync failed:', userErr.message);
+    }
+
+    // DOCUMENTS - Only existing columns, safe date handling
+    const docUpsertData = documents.map(d => ({
+      id: d.name,
+      name: d.name,
+      path: d.path || null,
+      author: d.author || null,
+      reviewer: d.reviewer || null,
+      approvers: Array.isArray(d.approvers) ? d.approvers.join(',') : null,
+      assignedUsers: Array.isArray(d.assignedUsers) ? d.assignedUsers.join(',') : null,
+      uploadTime: d.uploadTime || null,
+      isobsolete: !!d.isObsolete,
+      emailalertsent: !!d.emailAlertSent
+      // REMOVED: obsoletedate, nextreviewdate, approvedat - don't exist in schema
+    }));
+    
+    const { error: docError } = await window.supabase
+      .from('documents')
+      .upsert(docUpsertData, { onConflict: 'id' });
+    if (docError) console.error('Documents upsert failed:', docError);
+
+    // APPROVALS - Use correct column names, skip empty
+  
+// APPROVALS - SAFE upsert (skip missing columns)
+for (const docName of Object.keys(approvals)) {
+  const data = approvals[docName];
+  if (!data) continue;
+
+  // Normalise arrays so .length checks are reliable --CHANGED
+  if (!Array.isArray(data.approveRequestedBy)) data.approveRequestedBy = [];
+  if (!Array.isArray(data.readRequestedBy))    data.readRequestedBy    = [];
+  if (!Array.isArray(data.approvedBy))         data.approvedBy         = [];
+  if (!Array.isArray(data.readBy))             data.readBy             = [];
+
+  // Skip only if ALL are empty --CHANGED
+  if (
+    data.approveRequestedBy.length === 0 &&
+    data.readRequestedBy.length    === 0 &&
+    data.approvedBy.length         === 0 &&
+    data.readBy.length             === 0
+  ) continue;
+
+  // SAFE UPSERT - Only existing columns
+  const upsertData = {
+    docid: docName,
+   
+    approverequestedby: data.approveRequestedBy.length ? data.approveRequestedBy.join(',') : null,
+    readrequestedby: data.readRequestedBy.length ? data.readRequestedBy.join(',') : null,
+    approvedby: data.approvedBy.length ? JSON.stringify(data.approvedBy) : null,
+    readby: data.readBy.length ? JSON.stringify(data.readBy) : null,
+  };
+
+   
+  try {
+    const { error } = await window.supabase
+      .from("approvals")
+      .upsert(upsertData, { onConflict: 'docid' })
+    
+    if (error) {
+      console.warn(`Approval ${docName} skipped (schema issue):`, error.message);
+      // DON'T break - continue with other records
+    }
+  } catch (upsertError) {
+    console.error(`Approval ${docName} upsert failed:`, upsertError);
+  }
+}
+   
+    console.log(`🔄 Synced - Users: ${users.length} Docs: ${documents.length}`);
+  } catch (error) {
+    console.error('Supabase save FAILED:', error);
+  }
+}
+
+
+
+// ✅ AUTO-PURGE: Remove obsolete docs > 5 years
+async function purgeOldObsolete() {
+  const fiveYearsAgo = new Date();
+  fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
+  
+  const oldObsolete = documents.filter(doc => 
+    doc.isObsolete && 
+    doc.obsoleteDate && 
+    doc.obsoleteDate < fiveYearsAgo
+  );
+  
+  if (oldObsolete.length === 0) return;
+  
+  // Remove from local + Supabase
+  oldObsolete.forEach(doc => {
+    const idx = documents.findIndex(d => d.name === doc.name);
+    if (idx >= 0) documents.splice(idx, 1);
+    delete approvals[doc.name];
+  });
+  
+    await saveData();
+  showMessage(`${oldObsolete.length} obsolete documents 5yrs purged.`, false);
+} 
+
+<!--CHANGED NEW 7-DAY RETRY FUNCTION-->
+async function checkExpiredWithRetry() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiredDocs = documents.filter(doc => {
+    if (!doc.nextReviewDate || doc.isObsolete) return false;  
+    const d = new Date(doc.nextReviewDate);                  
+    d.setHours(0, 0, 0, 0);                                  
+    return d.getTime() <= today.getTime();                    
+  });
+  
+  if (expiredDocs.length > 0) {
+    const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const needsRetry = expiredDocs.some(doc => 
+      !doc.emailAlertSent || new Date(doc.emailAlertSent) < sevenDaysAgo
+    );
+    
+    if (needsRetry) {
+     const names = expiredDocs.map(d => d.name).join(', ');
+      const msg = `The following documents have expired. Mark as [OBSOLETED]?\n${names}`;
+      if (confirm(msg)) {
+        const now = new Date();
+        expiredDocs.forEach(doc => {
+          if (!doc.isObsolete) {
+            doc.isObsolete = true;
+            doc.obsoleteDate = now;
+if (!doc.name.startsWith("OBSOLETED ")) {
+      doc.name = "OBSOLETED " + doc.name;
+           }
+          }
+        });
+        await saveData();
+      } else {
+        expiredDocs.forEach(doc => {
+          doc.emailAlertSent = now;
+        });
+        await saveData();
+      }
+    }
+  }
+}  
+
+function updateRoleSelectionState() {
+    const adminCount = users.filter(u => {
+  if (Array.isArray(u.rights)) return u.rights.includes('upload');
+  return (u.rights || '').includes('upload');
+}).length;
+    const regRole = document.getElementById('regRole')
+    if (adminCount >= 4) {
+        regRole.disabled = true
+        regRole.value = 'user'
+    } else {
+        regRole.disabled = false
+    }
+    console.log(`Admin limit: ${adminCount}/4`)
+}
+
+
+
+function showPage(page) {
+    console.log('showPage called with', page);
+    loginPage.style.display = 'none';
+    registrationPage.style.display = 'none';
+    adminSection.style.display = 'none';
+    userSection.style.display = 'none';   
+    passwordResetPage.style.display = 'none';
+    pageLogo.style.display = 'block';
+    
+    if (page === 'login') {
+        loginPage.style.display = 'block';
+        userSection.style.display = 'none';   
+        adminSection.style.display = 'none';  
+        document.getElementById('loginCorpId').value = '';
+        document.getElementById('loginPassword').value = '';
+        return;
+			
+    } else if (page === 'register') {
+        registrationPage.style.display = 'block';
+        updateRoleSelectionState();
+        return; 
+    } else if (page === 'passwordReset') {
+        passwordResetPage.style.display = 'block';
+        // clear reset password reset fields as needed
+        return; 
+    }
+    
+    if (!currentUser) {
+        showPage('login');
+        return;
+    }
+
+       if (page === 'user') {
+        adminSection.style.display = 'none';
+        userSection.style.display = 'block';
+        userBackToAdminBtn.style.display = currentUser && currentUser.rights.includes('upload') ? 'inline-block' : 'none';
+        renderUserDocuments();   
+        renderUserReads(); 
+        renderUserReviews();
+        updateSelectAllStatus();
+        return;
+    }
+
+    if (currentUser.rights.includes('upload')) {
+        adminSection.style.display = 'block';
+		userBackToAdminBtn.style.display = 'none';
+        currentUserPage = 1;
+        renderAdminUsers(currentUserPage);
+        renderDocumentsTable(currentPage);
+        updateSelectAllStatus();
+    } else if (page === 'admin') {
+        adminSection.style.display = 'block';
+        currentUserPage = 1;
+        renderAdminUsers(currentUserPage);
+        renderDocumentsTable(currentPage);
+    }
+}
+
+
+function checkObsoleteDocumentsForAdmin() {                   // <--NEW
+  const now = new Date();                                     // <--NEW
+
+  const obsoleteDocs = Object.values(documents || {}).filter(doc => { // <--NEW
+    if (!doc) return false;                                   // <--NEW
+    const nextReview = doc.nextReviewDate ? new Date(doc.nextReviewDate) : null; // <--NEW
+    const expiry = doc.expiryDate ? new Date(doc.expiryDate) : null; // <--NEW
+
+    const nextReviewObsolete = nextReview && nextReview < now; // <--NEW
+    const expiryObsolete = expiry && expiry < now;             // <--NEW
+
+    return nextReviewObsolete || expiryObsolete;               // <--NEW
+  });                                                          // <--NEW
+
+  if (obsoleteDocs.length > 0) {                               // <--NEW
+    alert(                                                     // <--NEW
+      `There are ${obsoleteDocs.length} document(s) past their review/expiry date. ` + // <--NEW
+      `Please obsolete or update them in the Documents List.`  // <--NEW
+    );                                                         // <--NEW
+  }                                                            // <--NEW
+}                                                              // <--NEW
+
+
+
+    goToRegister.onclick = () => showPage('register');
+    goToLoginReg.onclick = () => showPage('login');
+
+regForm.onsubmit = e => {
+  e.preventDefault();
+  const fullName = document.getElementById('fullName').value.trim();
+  const corpId = document.getElementById('regCorpId').value.trim().toLowerCase();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+  const roleSelect = document.getElementById('regRole');
+  let role = roleSelect.value;
+const secretQuestion = document.getElementById('secretQuestion').value;
+const secretAnswer = document.getElementById('secretAnswer').value.trim().toLowerCase();
+
+
+if (password !== confirmPassword) {
+  alert('Password mismatch.');
+  return;
+}
+
+if (users.some(u => u.corpId === corpId)) {
+  alert('CORP ID already exists.');
+  return;
+}
+
+const adminCount = users.filter(u => u.rights === 'upload').length;
+if (adminCount >= 4 && role === 'admin') {
+  role = 'approve'; // downgrade role if too many admins
+}
+
+const rights = role === 'admin' ? ['upload', 'approve'] : ['read'];
+
+users.push({
+  fullName,
+  corpId,
+  email,
+  password,
+  rights,
+  secretQuestion,
+  secretAnswer
+});
+
+saveData();
+updateRoleSelectionState() 
+alert('Successfully registered! Please login.');
+regForm.reset();
+showPage('login');
+
+};
+
+
+const forgotPasswordLink = document.getElementById("forgotPasswordLink");
+const passwordResetPage = document.getElementById("passwordResetPage");
+const passwordResetForm = document.getElementById("passwordResetForm");
+const resetMessage = document.getElementById("resetMessage");
+const returnToLogin = document.getElementById("returnToLogin");
+const fetchSecretQuestionBtn = document.getElementById('fetchSecretQuestionBtn');
+const resetCorpId = document.getElementById('resetCorpId');
+const displaySecretQuestion = document.getElementById('displaySecretQuestion');
+const resetSecretAnswer = document.getElementById('resetSecretAnswer');
+const resetNewPassword = document.getElementById('resetNewPassword');
+const resetConfirmPassword = document.getElementById('resetConfirmPassword');
+const submitNewPasswordBtn = document.getElementById('submitNewPasswordBtn');
+let currentResetUser = null;
+
+fetchSecretQuestionBtn.onclick = function() {
+  const corpId = resetCorpId.value.trim().toLowerCase();
+  if(!corpId) {
+    return;
+  }
+  const user = users.find(u => u.corpId === corpId);
+  if(!user) {
+    resetMessage.style.color = 'red';
+    resetMessage.textContent = 'User not found.';
+    return;
+  }
+  currentResetUser = user;
+  resetMessage.textContent = '';
+  displaySecretQuestion.textContent = user.secretQuestion || 'No secret question found.';
+  displaySecretQuestion.style.display = 'block';
+  resetSecretAnswer.style.display = 'block'; 
+  resetSecretAnswer.previousElementSibling.style.display = 'block'; // label for answer
+  resetNewPassword.style.display = 'none';
+  resetNewPassword.previousElementSibling.style.display = 'none';
+  resetConfirmPassword.style.display = 'none';
+  resetConfirmPassword.previousElementSibling.style.display = 'none';
+  submitNewPasswordBtn.style.display = 'none';
+ };
+
+// NEW: Allow Enter key in CORP ID field to trigger Fetch Secret Question
+resetCorpId.onkeydown = function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    fetchSecretQuestionBtn.click();
+  }
+};
+
+submitNewPasswordBtn.onclick = function() {
+  const answer = resetSecretAnswer.value.trim().toLowerCase();
+
+  if (!currentResetUser) {
+    alert('Please fetch your secret question first.');
+    return;
+  }
+  
+  if (answer !== currentResetUser.secretAnswer.toLowerCase()) {
+    resetMessage.style.color = 'red';
+    resetMessage.textContent = 'Incorrect answer to secret question.';
+    return;
+  }
+  
+  resetNewPassword.style.display = 'block';
+  resetNewPassword.previousElementSibling.style.display = 'block';
+  resetConfirmPassword.style.display = 'block';
+  resetConfirmPassword.previousElementSibling.style.display = 'block';
+  submitNewPasswordBtn.style.display = 'inline-block';
+  resetMessage.textContent = '';
+};
+
+
+forgotPasswordLink.onclick = function() {
+  showPage("passwordReset");
+};
+
+returnToLogin.onclick = function() {
+  showPage("login");
+};
+
+passwordResetForm.onsubmit = function(e) {
+  e.preventDefault();
+  if(!currentResetUser) {
+    resetMessage.style.color = 'red';
+    resetMessage.textContent = 'Please fetch your secret question first.';
+    return;
+  }
+  const newPassword = resetNewPassword.value;
+  const confirmPassword = resetConfirmPassword.value;
+
+  if(newPassword !== confirmPassword) {
+    resetMessage.style.color = 'red';
+    resetMessage.textContent = 'Password mismatch.';
+    return;
+  }
+  currentResetUser.password = newPassword;
+  saveData();
+  resetMessage.style.color = 'green';
+  resetMessage.textContent = 'Password successfully reset. Please login.';
+  setTimeout(() => showPage('login'), 2000);
+};
+
+
+loginForm.onsubmit = async function(e) {
+  e.preventDefault();
+  const corpId = document.getElementById('loginCorpId').value.trim().toLowerCase();
+  const password = document.getElementById('loginPassword').value;
+  const user = users.find(u => u.corpId === corpId && u.password === password);
+  
+  if (user) {
+    currentUser = user;
+    showPage(currentUser.rights.includes('upload') ? 'admin' : 'user');
+    console.log('✅ Login successful - refresh anytime for latest data');
+
+  if (currentUser.rights.includes('upload')) {                    <!--NEW INSERT-->
+      checkObsoleteDocumentsForAdmin();                             <!--NEW INSERT-->
+      if (obsoleteCheckTimer) clearInterval(obsoleteCheckTimer);    <!--NEW INSERT-->
+      obsoleteCheckTimer = setInterval(() => {                      <!--NEW INSERT-->
+        if (currentUser && currentUser.rights.includes('upload')) { <!--NEW INSERT-->
+          checkObsoleteDocumentsForAdmin();                         <!--NEW INSERT-->
+        }                                                           <!--NEW INSERT-->
+      }, 60000); // check every 60s                                 <!--NEW INSERT-->
+    }                                                               <!--NEW INSERT-->
+
+  } else {
+    alert('Invalid CORP ID or password.');
+  }
+};
+
+document.getElementById('sortSelect').addEventListener('change', function() {
+  sortBy = this.value;
+  currentPage = 1;
+  renderDocumentsTable(currentPage);
+});
+
+document.getElementById('sortDirectionSelect').addEventListener('change', function() {
+  sortDirection = this.value;
+  currentPage = 1;
+  renderDocumentsTable(currentPage);
+});
+
+
+adminLogoutBtn.onclick = () => {
+  if (currentUser && currentUser.originalRights) {
+    currentUser.rights = currentUser.originalRights;
+    delete currentUser.originalRights;
+  }
+  currentUser = null;
+  showPage('login');
+};
+
+userLogoutBtn.onclick = () => {
+  if (currentUser && currentUser.originalRights) {
+    currentUser.rights = currentUser.originalRights;
+    delete currentUser.originalRights;
+  }
+  currentUser = null;
+  showPage('login');
+};
+
+document.getElementById('sortSelect').addEventListener('change', function() {
+  sortBy = this.value;
+  currentPage = 1;
+  renderDocumentsTable(currentPage);
+});
+
+document.getElementById('sortDirectionSelect').addEventListener('change', function() {
+  sortDirection = this.value;
+  currentPage = 1;
+  renderDocumentsTable(currentPage);
+});
+
+// ✅ KEEP ONLY ONE OF THESE:
+browseFilesBtn.onclick = () => fileInput.click();
+
+document.getElementById('adminRefresh').onclick = () => {
+  renderAdminUsers(currentUserPage);
+  renderDocumentsTable(currentPage);
+};
+
+// ✅ DELETE the SECOND duplicate below:
+// browseFilesBtn.onclick = () => fileInput.click();  ← DELETE THIS ONE
+fileInput.onchange = e => handleFiles(e.target.files);
+
+
+
+
+document.getElementById('dropZone').ondragover = e => { 
+  e.preventDefault(); 
+  e.currentTarget.style.borderColor = 'green'; 
+};
+document.getElementById('dropZone').ondragleave = e => { 
+  e.preventDefault(); 
+  e.currentTarget.style.borderColor = '#aaa'; 
+};
+document.getElementById('dropZone').ondrop = e => { 
+  e.preventDefault(); 
+  e.currentTarget.style.borderColor = '#aaa'; 
+  handleFiles(e.dataTransfer.files); 
+};
+document.getElementById('dropZone').onclick = () => fileInput.click();
+
+function handleFiles(files) {
+  const newFiles = [];  // Single array for ALL files
+  
+  // Process files but DON'T alert inside loop
+  for(const file of files) {
+    if(!documents.some(d => d.name === file.name)) {
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const path = e.target.result;
+        documents.push({ 
+          name: file.name, 
+          path, 
+          assignedUsers: [], 
+          uploadTime: Date.now() 
+        });
+        
+        if(!approvals[file.name]) {
+          approvals[file.name] = { 
+            approveRequestedBy: [], 
+            readRequestedBy: [], 
+            approvedBy: [], 
+            readBy: [] 
+          };
+        }
+        newFiles.push(file.name);  // ✅ Collect only
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+  
+  // ✅ SINGLE alert AFTER all files processed
+  setTimeout(async () => {
+    if (newFiles.length > 0) {
+      await saveData();           
+      currentPage = 1;
+      renderDocumentsTable();    
+      alert(`${newFiles.length} document(s) uploaded. Use users management to assign.`);  
+    }
+  }, 800);  
+}
+
+
+
+function hasPendingAction(doc) {
+  if (!approvals[doc.name]) return false;
+  if((approvals[doc.name].approveRequestedBy || []).length > 0) return true;
+  if((approvals[doc.name].readRequestedBy || []).length > 0) return true;
+  return false;
+}
+
+
+function renderDocumentsTable() {
+  try {
+    documentTableBody.innerHTML = '';
+    paginationSelect.innerHTML = '';
+
+    if (!documents || documents.length === 0) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td colspan="12" style="text-align:center">No documents uploaded.</td>`;
+      documentTableBody.appendChild(tr);
+      paginationContainer.style.display = 'none';
+      return;
+    }
+
+    if (!users || users.length === 0) {
+      console.log('⏳ Users loading, skipping render...');
+      return;
+    }
+
+    paginationContainer.style.display = 'block';
+
+documents.forEach(doc => {
+  if (!approvals[doc.name]) {
+    approvals[doc.name] = {
+      approveRequestedBy: [],
+      readRequestedBy: [],
+      approvedBy: [],
+      readBy: [],
+      reviewRequestedBy: [],
+      reviewedBy: [],
+      approvalRequestSentAt: null,
+      reviewRequestSentByAdmin: false,
+      readRequestSentAt: null
+    };
+  }
+});
+
+  
+  
+// ✅ GLOBAL SORT - Sort ALL documents FIRST
+let sortedDocuments = [...documents];
+const sortSelect = document.getElementById('sortSelect');
+const sortDirectionSelect = document.getElementById('sortDirectionSelect'); 
+const sortBy = sortSelect ? sortSelect.value : 'docName';
+const sortDirection = sortDirectionSelect ? sortDirectionSelect.value : 'asc'; 
+const toStr = (v) => (v == null ? '' : String(v));
+
+sortedDocuments.sort((a, b) => {
+  const aPending = hasPendingAction(a);
+  const bPending = hasPendingAction(b);
+  if(aPending !== bPending) return aPending ? -1 : 1;
+  
+  let primaryA, primaryB, secondaryA, secondaryB, tertiaryA, tertiaryB;
+
+  // TERTIARY: Always document name (A-Z)
+  tertiaryA = a.name || '';
+  tertiaryB = b.name || '';
+  
+  // SECONDARY: Always next review date (earliest first)
+  secondaryA = a.nextReviewDate || null;
+  secondaryB = b.nextReviewDate || null;
+  
+  switch (sortBy) {
+    case 'docName': 
+      const nameA = toStr(a?.name);
+      const nameB = toStr(b?.name);
+      const nameCmp = nameA.localeCompare(nameB);  
+      return sortDirection === 'asc' ? nameCmp : -nameCmp;
+     
+    case 'author':
+      primaryA = a.author ? (users.find(u => u.corpId === a.author)?.fullName || a.author) : '';
+      primaryB = b.author ? (users.find(u => u.corpId === b.author)?.fullName || b.author) : '';
+      break;
+      
+    case 'reviewer':
+      primaryA = a.reviewer ? (users.find(u => u.corpId === a.reviewer)?.fullName || a.reviewer) : '';
+      primaryB = b.reviewer ? (users.find(u => u.corpId === b.reviewer)?.fullName || b.reviewer) : '';
+      break;
+      
+    case 'approver':
+      primaryA = approvals[a.name]?.approvedBy?.map(a => a.fullName).sort().join(', ') || '';
+      primaryB = approvals[b.name]?.approvedBy?.map(a => a.fullName).sort().join(', ') || '';
+      break;
+      
+    case 'approvalReq':
+      primaryA = approvals[a.name]?.approveRequestedBy?.map(cid => users.find(u => u.corpId === cid)?.fullName || cid).join(', ') || '';
+      primaryB = approvals[b.name]?.approveRequestedBy?.map(cid => users.find(u => u.corpId === cid)?.fullName || cid).join(', ') || '';
+      break;
+      
+    case 'approvalDate':
+      primaryA = approvals[a.name]?.approvedBy?.[0]?.timestamp || null;
+      primaryB = approvals[b.name]?.approvedBy?.[0]?.timestamp || null;
+      break;
+      
+    case 'nextReviewDate':
+      primaryA = a.nextReviewDate || null;
+      primaryB = b.nextReviewDate || null;
+      break;
+      
+    case 'readReq':
+      primaryA = approvals[a.name]?.readRequestedBy?.map(cid => users.find(u => u.corpId === cid)?.fullName || cid).join(', ') || '';
+      primaryB = approvals[b.name]?.readRequestedBy?.map(cid => users.find(u => u.corpId === cid)?.fullName || cid).join(', ') || '';
+      break;
+      
+    case 'readsCount':
+      primaryA = approvals[a.name]?.readBy?.length || 0;
+      primaryB = approvals[b.name]?.readBy?.length || 0;
+      return sortDirection === 'asc' ? primaryA - primaryB : primaryB - primaryA;
+      
+    default:
+      primaryA = a.name || ''; primaryB = b.name || '';
+  }
+    // ✅ 3-LEVEL COMPARE
+  if (primaryA < primaryB) return sortDirection === 'asc' ? -1 : 1;
+  if (primaryA > primaryB) return sortDirection === 'asc' ? 1 : -1;
+  
+  // Secondary: Next Review Date
+  if (secondaryA === null && secondaryB !== null) return sortDirection === 'asc' ? 1 : -1;
+  if (secondaryA !== null && secondaryB === null) return sortDirection === 'asc' ? -1 : 1;
+  if (secondaryA && secondaryB) {
+    const secCmp = new Date(secondaryA) - new Date(secondaryB);
+    if (secCmp !== 0) return sortDirection === 'asc' ? secCmp : -secCmp;
+  }
+
+  // 🌟 Fallback: latest upload first when everything else ties
+  if (!primaryA && !primaryB && !secondaryA && !secondaryB) {
+    const tA = a.uploadTime || 0;
+    const tB = b.uploadTime || 0;
+    return tB - tA;  // latest uploads first
+  }
+  
+  // Tertiary: Document Name
+  return sortDirection === 'asc' ? 
+    tertiaryA.localeCompare(tertiaryB) : 
+    tertiaryB.localeCompare(tertiaryA);
+});
+
+const totalPages = Math.ceil(sortedDocuments.length / PAGE_SIZE);
+
+for(let i=1; i<=totalPages; i++){
+  const startDocNum = (i-1)*PAGE_SIZE + 1;
+  const endDocNum = Math.min(i*PAGE_SIZE, sortedDocuments.length);
+  const option = document.createElement('option');
+  option.value = i;
+  option.textContent = `Documents ${startDocNum}-${endDocNum}`;
+  if(i === currentPage) option.selected = true;
+  paginationSelect.appendChild(option);
+}
+
+paginationSelect.onchange = () => {
+  currentPage = Number(paginationSelect.value);
+  renderDocumentsTable(currentPage);
+};
+
+const startIndex = (currentPage - 1) * PAGE_SIZE;
+const pageDocuments = sortedDocuments.slice(startIndex, startIndex + PAGE_SIZE);
+
+if (!pageDocuments.every(doc => doc && doc.name)) {
+  console.warn('Skipping sort - invalid documents found');
+  return;
+}
+
+pageDocuments.forEach(doc => {   
+
+  if (!doc || !doc.name) return;                             
+  const sortedUsers = users.slice().sort((a, b) => {
+    const nameA = a.fullName || a.corpId || 'Unknown'
+    const nameB = b.fullName || b.corpId || 'Unknown'
+    return nameA.localeCompare(nameB)
+  });                                                           
+  const approver1 = doc.approvers?.[0] || '';                       
+  const approver2 = doc.approvers?.[1] || '';                       
+  const approverDropdown = `<div class="approverSelect" data-docname="${doc.name}" style="font-size:0.8em;">
+    <select class="approver1Select" style="margin-bottom:2px;width:100%;">
+      <option value="">Approver 1</option>
+      ${sortedUsers.map(u => `<option value="${u.corpId}" ${approver1 === u.corpId ? 'selected' : ''}>${u.fullName}</option>`).join('')}
+    </select>
+    <select class="approver2Select" style="width:100%;">
+      <option value="">Approver 2</option>
+      ${sortedUsers.map(u => `<option value="${u.corpId}" ${approver2 === u.corpId ? 'selected' : ''}>${u.fullName}</option>`).join('')}
+    </select>
+  </div>`;                                                          
+
+
+  const approveReq = approvals[doc.name]?.approveRequestedBy || []; 
+  const readReq = approvals[doc.name]?.readRequestedBy || [];       
+  const approved = approvals[doc.name]?.approvedBy || [];          
+  const read = approvals[doc.name]?.readBy || [];                  
+  const assigned = doc.assignedUsers;                               
+  const allApproved = assigned.length > 0 && approved.length === assigned.length; 
+  const allRead = readReq.length > 0 && readReq.every(cid => read.find(r => r.corpId === cid));  
+  const allReadCount = read.length > 0;                             
+
+  if (allApproved && !doc.approvedAt) {                             
+    doc.approvedAt = new Date().toISOString();                     
+  }                                                               
+                                                           
+
+// APPROVAL REQUESTS COLUMN - Submit Now button or timestamp
+let approvalReqNames;
+const approvalRequestSentAt = approvals[doc.name]?.approvalRequestSentAt;
+if (!approvalRequestSentAt) {                                       // <--CHANGED
+  approvalReqNames =                                                // <--CHANGED
+    `<button class="btn-submit-approval" data-docname="${doc.name}" ` + // <--CHANGED
+    `style="font-size:0.75em;padding:2px 6px;">Submit Now</button>`;    // <--CHANGED
+} else {                                                            // <--CHANGED
+  const t = new Date(approvalRequestSentAt);                        // <--CHANGED
+  approvalReqNames = t.toLocaleString('en-GB', {                    // <--CHANGED
+    day:'2-digit', month:'2-digit', year:'numeric',                 // <--CHANGED
+    hour:'2-digit', minute:'2-digit', second:'2-digit'              // <--CHANGED
+  });                                                               // <--CHANGED
+}                                                                   // <--CHANGED
+// FIXED: REVIEW REQUESTS - Submit Now → Sent → Author+Reviewer timestamps
+let reviewReqNames;
+const reviewRequestSentAt = approvals[doc.name]?.reviewRequestSentAt;
+const authorAck = approvals[doc.name]?.reviewedBy?.find(r => r.corpId === doc.author);
+const reviewerAck = approvals[doc.name]?.reviewedBy?.find(r => r.corpId === doc.reviewer);
+
+if (!reviewRequestSentAt) {                                         // <--CHANGED
+    reviewReqNames =                                                // <--CHANGED
+      `<button class="btn-submit-review" data-docname="${doc.name}" ` + // <--CHANGED
+      `style="font-size:0.75em;padding:2px 6px;">Submit Now</button>`;  // <--CHANGED
+} else if (!authorAck && !reviewerAck) {                            // <--CHANGED
+    reviewReqNames = 'Sent';                                        // <--CHANGED
+} else if ((doc.author || doc.reviewer)) {                          // <--CHANGED
+    const authorTimestamp = authorAck ? formatDateTime24(new Date(authorAck.timestamp)) : '';
+    const reviewerTimestamp = reviewerAck ? formatDateTime24(new Date(reviewerAck.timestamp)) : '';
+    reviewReqNames = `${authorTimestamp}${authorTimestamp && reviewerTimestamp ? '<br>' : ''}${reviewerTimestamp}`;
+} else {
+    reviewReqNames = '';
+}
+
+
+// ✅ 2. READ REQUEST STATUS + RIGHT-CLICK TOOLTIP
+let readStatusText = '';
+let readPendingNames = '';
+if (readReq.length > 0) {
+  readPendingNames = readReq.map(cid => {
+    const user = users.find(u => u.corpId === cid);
+    return user ? user.fullName : cid;
+  }).join(', ');
+  
+  const pendingReadCount = readReq.filter(cid => !read.some(r => r.corpId === cid)).length;
+  
+  if (pendingReadCount === 0) {
+    readStatusText = '✅ Done'; 
+  } else {
+    readStatusText = `⏳ Sent <span title="${readPendingNames}" style="cursor:help;">(hover)</span>`;  // #1
+  }
+}
+
+    
+// READ REQUEST COLUMN
+let readReqNames = "";
+const approvalData = approvals[doc.name] || {};
+const readRequestSentAt = approvalData.readRequestSentAt;
+const isApproved =
+  doc.approvedAt instanceof Date &&
+  !isNaN(doc.approvedAt.getTime()) &&
+  Array.isArray(approvalData.approvedBy) &&
+  approvalData.approvedBy.length > 0;
+
+if (!readRequestSentAt && isApproved) {                             // <--CHANGED
+  // Show real button, not raw HTML text
+  readReqNames =
+    `<button class="btn-submit-read" data-docname="${doc.name}" ` +  // <--CHANGED
+    `style="font-size:0.75em;padding:2px 6px">Submit Now</button>`;  // <--CHANGED
+} else if (readRequestSentAt) {                                      // <--CHANGED
+  const t = new Date(readRequestSentAt);                             // <--CHANGED
+  if (!isNaN(t.getTime())) {                                         // <--CHANGED
+    readReqNames =
+      `<span class="read-timestamp" data-docname="${doc.name}" ` +
+      `style="font-size:0.75em;cursor:context-menu">` +
+      t.toLocaleString("en-GB", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      }) +
+      `</span>`;
+  } else {
+    readReqNames = "";
+  }
+} else {                                                             // <--CHANGED
+  readReqNames = "";                                                 // <--CHANGED
+}
+
+
+// APPROVAL DATE - use canonical doc.approvedAt
+let approvalDate = "";
+if (doc.approvedAt instanceof Date && !isNaN(doc.approvedAt.getTime())) {
+  approvalDate = formatDateTime24(doc.approvedAt);
+} else if (approved && approved.length > 0) {
+  // Fallback for older records: derive from last approvedBy timestamp string
+  const last = approved[approved.length - 1];
+  const dt = new Date(last.timestamp);
+  approvalDate = isNaN(dt.getTime()) ? "" : formatDateTime24(dt);
+} else {
+  approvalDate = "";
+}
+
+
+let nextReviewDate = null;
+let nextReviewFormatted = '';
+if (allApproved && approved.length > 0) {
+  const lastApprovalTime = new Date(approved[approved.length - 1].timestamp);
+  // Add exactly 2 hours
+  nextReviewDate = new Date(lastApprovalTime.getTime() + 30 * 60 * 1000);
+  // Full timestamp format: dd/mm/yyyy hh:mm:ss
+  nextReviewFormatted = nextReviewDate.toLocaleString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit', 
+    second: '2-digit'
+  });
+}const nextReviewCell = nextReviewFormatted || '';
+                                  
+const isAlarmActive =                                             
+  nextReviewDate &&                                               
+  new Date() >= new Date(nextReviewDate.getTime() - 24 * 60 * 60 * 1000) && 
+  !doc.emailAlertSent &&                                          
+  !doc.isObsolete;                                               
+
+
+const readsCount = read.length || 0;
+
+
+const isObsolete = doc.name.startsWith('[OBSOLETED]:');              
+const cleanName = isObsolete                                        
+  ? doc.name.replace('[OBSOLETED]: ', '')                            
+  : doc.name;                                                        
+const isReviewDue = nextReviewDate && new Date() > nextReviewDate && !isObsolete;  
+const rowClass = isReviewDue                                         
+  ? 'review-due-row'                                                 
+  : isObsolete ? 'obsolete-row' : '';                                
+const docDisplayName = isObsolete                                    
+  ? `<span class="obsolete-name">[OBSOLETED]: ${cleanName}</span>`   
+  : cleanName;                                                       
+
+
+// ONE DROPDOWN for Author
+const authorCid = doc.author || '';
+const authorsDropdown =
+  '<select class="authorSelect" data-docname="' + doc.name +
+  '" style="width:100%;font-size:0.8em">' +
+    '<option value="">Author</option>' +
+    sortedUsers.map(function (u) {
+      var selected = (authorCid === u.corpId) ? ' selected' : '';
+      return '<option value="' + u.corpId + '"' + selected + '>' + u.fullName + '</option>';
+    }).join('') +
+  '</select>';
+
+const reviewerCid = doc.reviewer || '';
+const reviewerDropdown =
+  '<select class="reviewerSelect" data-docname="' + doc.name +
+  '" style="width:100%;font-size:0.8em">' +
+    '<option value="">Reviewer</option>' +
+    sortedUsers.map(function (u) {
+      var selected = (reviewerCid === u.corpId) ? ' selected' : '';
+      return '<option value="' + u.corpId + '"' + selected + '>' + u.fullName + '</option>';
+    }).join('') +
+  '</select>';
+
+const tr = document.createElement('tr');
+if (rowClass) tr.className = rowClass;
+
+tr.innerHTML = `
+  <td style="width:14px"><input type="checkbox" class="docSelectCheckbox" data-docname="${doc.name}"></td>
+  <td class="docName" title="Right-click to Delete" data-name="${doc.name}">${docDisplayName}</td>
+  <td>${authorsDropdown}</td>
+  <td>${reviewerDropdown}</td>
+  <td>${approverDropdown}</td>
+    <td>${approvalDate}</td>
+  <td>${nextReviewCell}</td>
+  <td>${reviewReqNames}</td>
+  <td>${approvalReqNames}</td>
+  <td>${readReqNames}</td>
+  <td>${readsCount}</td>
+`;
+
+  documentTableBody.appendChild(tr);
+  });
+
+
+
+
+  } catch (error) {  // ← ADD THIS BLOCK
+    console.error('renderDocumentsTable failed:', error);
+    documentTableBody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:red;">Render error - check console</td></tr>';
+  }
+
+}
+
+selectAllDocsCheckbox.addEventListener('change', e => {
+    const checked = e.target.checked;
+    document.querySelectorAll('.docSelectCheckbox').forEach(chk => chk.checked = checked);
+});
+
+documentTableBody.addEventListener("change", async function (e) {
+  const target = e.target;
+
+  if (target.classList.contains("authorSelect")) {
+    const docName = target.getAttribute("data-docname");
+    const doc = documents.find(d => d.name === docName);
+    if (doc) {
+      doc.author = target.value === "Author" ? null : target.value;
+      await saveData();          // <--- ADD THIS
+    }
+    return;
+  }
+
+  if (target.classList.contains("reviewerSelect")) {
+    const docName = target.getAttribute("data-docname");
+    const doc = documents.find(d => d.name === docName);
+    if (doc) {
+      doc.reviewer = target.value === "Reviewer" ? null : target.value;
+      // Save and then immediately re-render current page so UI reflects this state
+      await saveData();
+      renderDocumentsTable(currentPage);
+    }
+    return;
+  }
+
+if (target.classList.contains("approver1Select") ||
+      target.classList.contains("approver2Select")) {
+    const wrapper = target.closest(".approverSelect");
+    const docName = wrapper.getAttribute("data-docname");
+    const doc = documents.find(d => d.name === docName);
+    if (doc) {
+      const a1 = wrapper.querySelector(".approver1Select").value;
+      const a2 = wrapper.querySelector(".approver2Select").value;
+      doc.approvers = [a1, a2]
+        .filter(v => v && v !== "Approver 1" && v !== "Approver 2");
+      await saveData();          // <--- ADD THIS
+    }
+    return;
+  }
+
+// ✅ SUBMIT NOW - Send Outlook email to approvers
+documentTableBody.addEventListener('click', async function(e) {
+  if (e.target.classList.contains('btn-submit-approval')) {
+    const docName = e.target.getAttribute('data-docname');
+    const doc = documents.find(d => d.name === docName);
+    if (!doc || !doc.approvers?.length) return;
+    
+    // Get approver emails (semicolon separated)
+    const approvers = doc.approvers.filter(Boolean);
+    const approverEmails = approvers.map(cid => {
+      const user = users.find(u => u.corpId === cid);
+      return user?.email;
+    }).filter(Boolean).join(';');
+    
+    if (!approverEmails) {
+      showMessage('No email addresses found for approvers', true);
+      return;
+    }
+    
+    // EXACT EMAIL FORMAT REQUIRED
+const appBaseUrl = window.location.origin;
+const subject = 'Document APPROVAL Request';
+
+const sentAt = new Date().toISOString();                        // <-- context
+
+const approveUrl =                                             // <--NEW INSERT
+  appBaseUrl +                                                 // <--NEW INSERT
+  '?approveDoc=' + encodeURIComponent(doc.name) +              // <--NEW INSERT
+  '&approverCORPID={{CORP_ID}}' +                              // <--NEW INSERT
+  '&sentAt=' + encodeURIComponent(sentAt);                     // <--NEW INSERT
+
+const bodyLines = [
+  'Dear approver,',
+  '',
+  'Please approve the following document:',
+  '',
+  `Document: ${doc.name}`,
+            ``,
+  `Click <a href="${approveUrl}">here</a> to approve.`,  
+  '',
+  'Regards,',
+  'Document Control Officer'
+];
+const body = encodeURIComponent(bodyLines.join("\n"));
+
+
+const mailto = "mailto:" + approverEmails +
+  "?subject=" + encodeURIComponent(subject) +
+  "&body=" + body;
+window.open(mailto, "_blank");
+    
+if (!approvals[docName]) {                                   
+      approvals[docName] = { approveRequestedBy: [], approvedBy: [], readRequestedBy: [], readBy: [] };
+    }
+    approvals[docName].approveRequestedBy = approvers;
+    approvals[docName].approvalRequestSentAt = new Date().toISOString();   
+    doc.assignedUsers = approvers;
+e.target.textContent = 'Sent';                                         
+e.target.classList.add('sent');                                        
+
+await saveData();
+renderDocumentsTable(currentPage);
+showMessage(`Approval request sent to ${approvers.length} approver(s)`, false);
+}
+
+
+
+  if (e.target.classList.contains('btn-submit-read')) {                
+    const docName = e.target.getAttribute('data-docname');            
+    const doc = documents.find(d => d.name === docName);              
+    if (!doc) return;                                                  
+
+
+ const isApproved = doc.approvedAt || approvals[docName]?.approvedBy?.length > 0;
+  if (!isApproved) {
+    showMessage('Document must be approved first before sending Read request!', true);
+    return;
+  }
+
+    // Ensure approvals entry exists                                     
+    if (!approvals[docName]) {                                         
+      approvals[docName] = {                                           
+        approveRequestedBy: [],                                       
+        readRequestedBy: [],                                           
+        approvedBy: [],                                                // <-- CHANGED
+        readBy: []                                                     // <-- CHANGED
+      };                                                               // <-- CHANGED
+    }                                                                  // <-- CHANGED
+
+    // Add ALL registered users to readRequestedBy                      // <-- CHANGED
+    const allUserCids = users.map(u => u.corpId.toLowerCase());        // <-- CHANGED
+    allUserCids.forEach(cid => {                                       // <-- CHANGED
+      if (!approvals[docName].readRequestedBy.includes(cid)) {         // <-- CHANGED
+        approvals[docName].readRequestedBy.push(cid);                  // <-- CHANGED
+      }                                                                // <-- CHANGED
+      if (!doc.assignedUsers) doc.assignedUsers = [];                  // <-- CHANGED
+      if (!doc.assignedUsers.includes(cid)) {                          // <-- CHANGED
+        doc.assignedUsers.push(cid);                                   // <-- CHANGED
+      }                                                                // <-- CHANGED
+    });                                                                 // <-- CHANGED
+
+
+   // Build Outlook email to ALL users                          
+const toEmails = users                                   
+  .map(u => u.email)                                      
+  .filter(Boolean)                                       
+  .join(';');                                            
+if (toEmails) {                                           
+  const appBaseUrl = window.location.origin;                               
+  const subject = 'Document READ Request';   
+
+  const sentAt = '{{SENT_AT}}';                           // <-- context
+
+  const readUrl =                                         // <--NEW INSERT
+    appBaseUrl +                                          // <--NEW INSERT
+    '?readDoc=' + encodeURIComponent(doc.name) +          // <--NEW INSERT
+    '&userCORP_ID={{CORP_ID}}' +                          // <--NEW INSERT
+    '&sentAt=' + encodeURIComponent(sentAt);              // <--NEW INSERT
+
+  const bodyLines = [                                     // <--CHANGED
+    'Dear users,',                                        
+    '',                                                   
+    'Please read the following document:',                
+    '',                                                   
+    `Document: ${doc.name}`,                              
+    '',                                                   
+    `Click <a href="${readUrl}">here</a> to mark read.`, 
+    '',                                                   
+    'Regards,',                                           
+    'Document Control Officer'                            
+  ];                                                      
+                                          
+  const body = encodeURIComponent(bodyLines.join('\n'));  
+  const mailto = `mailto:${toEmails}?subject=${encodeURIComponent(subject)}&body=${body}`; 
+  window.open(mailto, '_blank');                          
+}                                                          
+    // Store send timestamp (for column display & right-click)          // <-- CHANGED
+    approvals[docName].readRequestSentAt = new Date().toISOString();   // <-- CHANGED
+
+    saveData();                                                        // <-- CHANGED
+    renderDocumentsTable(currentPage);                                 // <-- CHANGED
+    renderUserReads();                                                 // <-- CHANGED
+    showMessage(`Read request submitted to all users for ${docName}.`, false); 
+  }                                                                    
+
+});
+
+// ✅ REVIEW REQUEST - Send Outlook email to Author+CC Reviewer
+document.addEventListener('click', async function(e) {
+if (e.target.classList.contains('btn-submit-review')) {
+    e.preventDefault();
+    const docName = e.target.getAttribute('data-docname');
+    const doc = documents.find(d => d.name === docName);
+    
+    if (!doc?.author || !doc?.reviewer) {
+        showMessage('Author and Reviewer must be assigned first.', true);
+        return;
+    }
+
+    const author = users.find(u => u.corpId === doc.author);
+    const reviewer = users.find(u => u.corpId === doc.reviewer);
+    
+    if (!author?.email || !reviewer?.email) {
+        showMessage('Missing email for author or reviewer.', true);
+        return;
+    }
+
+    // ✅ EMAIL (EXACT SPEC)
+const subject = 'Document REVIEW Request';
+const appBaseUrl = window.location.origin;                         // <-- CHANGED
+
+const sentAt = new Date().toISOString();                           <!--NEW INSERT-->
+
+const authorUrl =
+  appBaseUrl + '?ackDoc=' + encodeURIComponent(doc.name) +
+  '&reviewCORP_ID=' + encodeURIComponent(author.corpId) +
+  '&sentAt=' + encodeURIComponent(sentAt);
+
+const reviewerUrl =
+  appBaseUrl + '?ackDoc=' + encodeURIComponent(doc.name) +
+  '&reviewCORP_ID=' + encodeURIComponent(reviewer.corpId) +
+  '&sentAt=' + encodeURIComponent(sentAt);
+
+const emailBody = [
+  'Dear Author and Reviewer,',
+  '',
+  'The following document will expire soon. Please review.',
+  '',
+  'Document: ' + doc.name,
+  '',
+  'Author: Click <a href="' + authorUrl + '">here</a> to Acknowledge.',
+  'Reviewer: Click <a href="' + reviewerUrl + '">here</a> to Acknowledge.',
+  '',
+  'Regards,',
+  'Document Control Officer'
+].join('\n');
+
+                          
+
+const mailto = `mailto:${author.email}?cc=${reviewer.email}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+window.open(mailto, '_blank');
+
+
+    // ✅ DISABLE AUTO-SEND + Mark as sent
+    if (!approvals[docName]) approvals[docName] = {};
+    approvals[docName].reviewRequestedBy = [doc.author, doc.reviewer];
+    approvals[docName].reviewRequestSentByAdmin = true;  // ✅ DISABLES auto-send
+    approvals[docName].reviewRequestSentAt = new Date().toISOString();  // ✅ FIX revert
+    
+    e.target.textContent = 'Sent';
+    e.target.classList.add('sent');
+    
+    saveData();
+    renderDocumentsTable(currentPage);
+    showMessage(`Review request sent to ${author.fullName} + ${reviewer.fullName}`, false);
+    return;
+}
+
+});
+});
+
+
+documentTableBody.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  
+// ✅ REVIEW DUE → OBSOLETE (5-YEAR RETENTION)
+if (e.target.closest('tr.review-due-row')) {
+  const docName = e.target.closest('tr').querySelector('.docName').dataset.name;
+  if (confirm(`Document "${docName}" is due for review today.\n\nObsolete (stored 5 years)?`)) {
+    const doc = documents.find(d => d.name === docName);
+    if (doc) {
+      doc.isObsolete = true;
+      doc.obsoleteDate = new Date();  // ✅ NEW - Start 5-year clock
+      saveData().catch(err => console.error('Sync failed:', err));
+      renderDocumentsTable(currentPage);
+      showMessage(`"${docName}" marked OBSOLETE (5-year retention).`, false);
+    }
+  }
+  return;
+}
+         
+    if (e.target.classList.contains('docName')) {
+  const docName = e.target.dataset.name;
+  if (confirm(`Delete document ${docName}?`)) {
+    isDeleting = true;  // ✅ PAUSE AUTO-SYNC
+    
+    // SUPABASE ONLY - NO LOCAL CHANGES
+    Promise.all([
+      window.supabase.from('approvals').delete().eq('doc_id', docName),
+      window.supabase.from('documents').delete().eq('id', docName)
+    ])
+    .then(async ([approvalRes, docRes]) => {
+      if (docRes.error) throw docRes.error;  // ✅ ONLY SUCCESS → RELOAD
+      console.log(`✅ ${docName} deleted from Supabase`);
+      await loadData();  // ✅ REFRESH FROM SERVER
+      renderDocumentsTable(currentPage);  // ✅ UI AFTER SUPABASE CONFIRMED
+      showMessage(`${docName} deleted across all devices.`, false);
+    })
+    .catch(async (err) => {
+      console.error('Supabase delete failed:', err);
+      await loadData();  // ✅ RESTORE FROM SERVER ON ERROR
+    })
+    .finally(() => {
+      isDeleting = false;  // ✅ RESUME AUTO-SYNC
+    });
+  }
+}
+
+
+
+
+
+// ✅ 2. READ PENDING USERS - ONLY UNREAD (NEW FEATURE)
+if (e.target.closest('td') && e.target.closest('td').cellIndex === 10) {
+  const docName = e.target.closest('tr').querySelector('.docName').dataset.name;
+  const readReq = approvals[docName]?.readRequestedBy || [];
+  const readDone = approvals[docName]?.readBy || [];
+   // FILTER: Only users who haven't read yet
+  const pendingUsers = readReq
+    .filter(cid => !readDone.some(r => r.corpId === cid))
+    .map(cid => users.find(u => u.corpId === cid)?.fullName || cid)
+    .filter(Boolean);
+  
+  const pendingList = pendingUsers.length > 0 ? pendingUsers.join(', ') : 'None pending';
+  alert(`📖 "${docName}" - PENDING READ:\n${pendingList}`);
+}
+
+
+});
+
+
+const USER_PAGE_SIZE = 20;
+let currentUserPage = 1;
+
+async function deleteUserFromSupabase(corpId) {
+  if (!window.supabase) {
+    console.warn('Supabase not ready - skip remote delete');
+    return;
+  }
+  const { error } = await window.supabase
+    .from('users')
+    .delete()
+    .eq('id', corpId);   // correct: users.id is TEXT and holds CORP ID
+
+  if (error) {
+    throw error;
+  }
+}
+
+async function deleteDocument(docName) {
+  if (confirm(`Delete ${docName}? This will also delete approval records.`)) {
+    isDeleting = true; // Pause auto-sync
+    
+    try {
+      // Delete approvals first (foreign key constraint)
+      await window.supabase
+        .from('approvals')
+        .delete()
+        .eq('doc_id', docName);                 // <-- CHANGED (was 'docid')
+      delete approvals[docName];
+      
+      // Delete document
+      const { error: docError } = await window.supabase
+        .from('documents')
+        .delete()
+        .eq('id', docName);
+      
+      if (docError) throw new Error(`Document delete failed: ${docError.message}`);
+      
+      // Remove from local arrays
+      const docIdx = documents.findIndex(d => d.name === docName);
+      if (docIdx !== -1) {
+        documents.splice(docIdx, 1);
+      }
+      
+      await saveData();
+      renderDocumentsTable(currentPage);
+      showMessage(`${docName} deleted successfully`, false);
+    } catch (error) {
+      console.error('Delete failed:', error);
+      showMessage('Delete failed: ' + error.message, true);
+      await loadData(); // Refresh from server
+    } finally {
+      isDeleting = false;
+    }
+  }
+}
+
+
+
+function renderAdminUsers() {
+  userTableBody.innerHTML = '';
+  const rolePriority = { upload: 1, approve: 2, read: 3 };
+  users.sort((a, b) => {
+  const aPrimary = Array.isArray(a.rights) ? 
+    (a.rights.includes('upload') ? 'upload' : a.rights.includes('approve') ? 'approve' : 'read') : 
+    (a.rights || '').includes('upload') ? 'upload' : (a.rights || '').includes('approve') ? 'approve' : 'read';
+  const bPrimary = Array.isArray(b.rights) ? 
+    (b.rights.includes('upload') ? 'upload' : b.rights.includes('approve') ? 'approve' : 'read') : 
+    (b.rights || '').includes('upload') ? 'upload' : (b.rights || '').includes('approve') ? 'approve' : 'read';
+  
+  const rolePriority = { upload: 1, approve: 2, read: 3 };
+  if (rolePriority[aPrimary] !== rolePriority[bPrimary]) {
+    return rolePriority[aPrimary] - rolePriority[bPrimary];
+  } else {
+    const nameA = a.fullName || a.corpId || 'Unknown';  // ✅ FIXED
+    const nameB = b.fullName || b.corpId || 'Unknown';  // ✅ FIXED
+    return nameA.localeCompare(nameB);
+  }
+});
+
+
+  const totalUserPages = Math.ceil(users.length / USER_PAGE_SIZE);
+  
+  const startIndex = (currentUserPage - 1) * USER_PAGE_SIZE;
+  const pageUsers = users.slice(startIndex, startIndex + USER_PAGE_SIZE);
+  
+  pageUsers.forEach(user => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="checkbox" class="userCheckbox" data-cid="${user.corpId}"></td>
+      <td>${user.fullName}</td>
+      <td>${user.corpId}</td>
+      <td>${user.email}</td>
+      <td>
+  <select data-cid="${user.corpId}" class="rightsSelect">
+    <option value="read" ${user.rights?.includes('read') ? 'selected' : ''}>Read Only</option>
+    <option value="approve" ${user.rights?.includes('approve') ? 'selected' : ''}>Approve Documents</option>
+    <option value="upload" ${user.rights?.includes('upload') ? 'selected' : ''}>Upload Full Access</option>
+  </select>
+</td>
+
+      <td><button class="btn btn-danger" data-cid="${user.corpId}">Delete</button></td>
+    `;
+    userTableBody.appendChild(tr);
+  });
+  
+  // Pagination dropdown UI handling
+  if (totalUserPages > 1) {
+    userPaginationContainer.style.display = 'block';
+    userPaginationSelect.innerHTML = '';
+    for(let i = 1; i <= totalUserPages; i++) {
+      const startUserNum = (i - 1) * USER_PAGE_SIZE + 1;
+      const endUserNum = Math.min(i * USER_PAGE_SIZE, users.length);
+      const option = document.createElement('option');
+      option.value = i;
+      option.textContent = `User ${startUserNum}-${endUserNum}`;
+      if (i === currentUserPage) option.selected = true;
+      userPaginationSelect.appendChild(option);
+    }
+  } else {
+    userPaginationContainer.style.display = 'none';
+  }
+}
+
+
+userTableBody.addEventListener('change', e => {
+  if (e.target.classList.contains('rightsSelect')) {
+    const cid = e.target.getAttribute('data-cid').toLowerCase();
+    const user = users.find(u => u.corpId === cid);
+    if (user) {
+      const newRight = e.target.value;
+      
+      // ✅ PROPER rights arrays for each level
+      if (newRight === 'upload') {
+        user.rights = ['upload', 'approve', 'read'];  // FULL ACCESS
+      } else if (newRight === 'approve') {
+        user.rights = ['approve', 'read'];            // APPROVE + READ
+      } else {
+        user.rights = ['read'];                       // READ ONLY
+      }
+      
+      // Admin count check (upload = admin)
+      if (newRight === 'upload') {
+        const adminCount = users.filter(u => u.rights.includes('upload')).length;
+        if (adminCount > 4) {
+          alert('Cannot assign more than 4 administrators.');
+          renderAdminUsers(currentUserPage);
+          return;
+        }
+      }
+      
+      saveData();
+      showMessage(`Updated rights for ${user.fullName}`, false);
+      updateRoleSelectionState();
+      renderAdminUsers(currentUserPage);
+    }
+  }
+});
+
+
+userPaginationSelect.onchange = function() {
+  currentUserPage = Number(this.value);
+  renderAdminUsers();
+};
+
+
+userTableBody.addEventListener('click', e => {
+  if(e.target.classList.contains('btn-danger')){
+    const cid = e.target.getAttribute('data-cid').toLowerCase();
+    if(confirm(`Delete user ${cid}?`)){
+      const idx = users.findIndex(u => u.corpId === cid);
+      
+
+if (idx >= 0) {
+        // Remove from local list
+        users.splice(idx, 1);
+
+        // Unassign from documents so they stop receiving tasks
+        documents.forEach(doc => {
+          if (doc.assignedUsers) {
+            doc.assignedUsers = doc.assignedUsers.filter(u => u !== cid);
+          }
+        });
+
+        deleteUserFromSupabase(cid)
+          .then(() => {
+            saveData();
+            renderAdminUsers();
+            renderDocumentsTable();
+            showMessage('User deleted', false);
+            if (currentUser && !currentUser.rights.includes('upload')) {
+              renderUserDocuments();
+              renderUserReads();
+            }
+            updateRoleSelectionState();
+          })
+          .catch(err => {
+            console.error('Supabase user delete failed', err);
+            showMessage('Failed to delete user in server, please try again.', true);
+            // Still refresh local UI to reflect current state
+            renderAdminUsers();
+            renderDocumentsTable();
+          });
+      }
+    }
+  }
+});
+
+
+if (assignRequestBtn) assignRequestBtn.onclick = function() {
+  const requestType = requestTypeSelect.value;
+  const selectedUserCids = Array.from(document.querySelectorAll('input.userCheckbox:checked')).map(chk => chk.dataset.cid.toLowerCase());
+  const selectedDocNames = Array.from(document.querySelectorAll('input.docSelectCheckbox:checked')).map(chk => chk.dataset.docname);
+  
+  if(!selectedUserCids.length || !selectedDocNames.length) {
+     showMessage("Please select at least 1 document AND 1 user.", true);
+    return;
+  }
+  
+
+// ✅ STEP 4 VALIDATION - Only "Approve Documents" & "Upload Full Access" can approve
+if(requestType === 'approve') {
+  const invalidUsers = selectedUserCids.filter(cid => {
+    const u = users.find(u => u.corpId === cid);
+    return u && !u.rights.includes('approve') && !u.rights.includes('upload');
+  });
+  
+  if(invalidUsers.length > 0) {
+    const invalidUserNames = invalidUsers.map(cid => {
+      const u = users.find(u => u.corpId === cid);
+      return u ? u.fullName + ' (' + u.rights + ')' : cid;
+    }).join(', ');
+    showMessage(`Users cannot approve: ${invalidUserNames}`, true);
+
+    return;
+  }
+}
+
+  
+
+function markDocumentReviewForUser(docName, corpId, fullName) {
+  if (!approvals[docName]) {
+    approvals[docName] = {
+      approveRequestedBy: [],
+      readRequestedBy: [],
+      approvedBy: [],
+      readBy: [],
+      reviewRequestedBy: [],
+      reviewedBy: []
+    };
+  }
+  const already = approvals[docName].reviewedBy?.find(r => r.corpId === corpId);
+  if (already) return false;
+
+  const timestamp = new Date().toLocaleString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+  approvals[docName].reviewedBy.push({ corpId, fullName, timestamp });
+  saveData();
+  return true;
+}
+
+
+function markDocumentApproveForUser(docName, corpId, fullName) {
+  if (!approvals[docName]) {
+    approvals[docName] = {
+      approveRequestedBy: [],
+      readRequestedBy: [],
+      approvedBy: [],
+      readBy: [],
+      reviewRequestedBy: [],
+      reviewedBy: []
+    };
+  }
+  const already = approvals[docName].approvedBy?.find(a => a.corpId === corpId);
+  if (already) return false;
+
+  const timestamp = new Date().toLocaleString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+  approvals[docName].approvedBy.push({ corpId, fullName, timestamp });
+  approvals[docName].approveRequestedBy =
+  approvals[docName].approveRequestedBy.filter(cid => cid !== corpId);
+
+ const doc = documents.find(d => d.name === docName);
+ if (doc && !doc.approvedAt) doc.approvedAt = timestamp;
+
+  saveData();
+  return true;
+}
+
+function handleAcknowledgeFromEmail(docName, corpId, fullName) {              // <-- NEW INSERT
+  const changed = markDocumentReviewForUser(docName, corpId, fullName);       // <-- NEW INSERT
+  if (changed) {                                                              // <-- NEW INSERT
+    saveData();                                                               // <-- NEW INSERT
+  }                                                                           // <-- NEW INSERT
+}                                                                             // <-- NEW INSERT
+
+  // ✅ STEP 4 VALIDATION - Read requests only for approved docs
+  if(requestType === 'read') {
+    const notApprovedDocs = selectedDocNames.filter(docName => {
+      const doc = documents.find(d => d.name === docName);
+      if(!doc) return true;
+      const approved = approvals[docName]?.approvedBy;
+      const assigned = doc.assignedUsers || [];
+      return !(assigned.length > 0 && approved && approved.length >= assigned.length);
+    });
+    
+    if(notApprovedDocs.length > 0) {
+      alert(`Documents "${notApprovedDocs.join(', ')}" not approved yet. Cannot send Read request!`);
+      return;
+    }
+  }
+  
+  // ✅ STEP 6: OUTLOOK EMAILS 
+  selectedUserCids.forEach(cid => {
+    const user = users.find(u => u.corpId === cid);
+    if(!user || !user.email) return;
+    
+    const email = user.email;
+    let subject, bodyLines;
+    
+    if(requestType === 'approve') {
+      subject = `Document APPROVAL Request`;
+      const appBaseUrl = window.location.origin;                            // <--NEW INSERT
+      const sentAt = new Date().toISOString();                              // <--NEW INSERT
+
+      const rowsHtml = selectedDocNames
+        .map(name => {
+          const approveUrl =                                             // <--NEW INSERT
+            appBaseUrl +                                                 // <--NEW INSERT
+            '?approveDoc=' + encodeURIComponent(name) +                  // <--NEW INSERT
+            '&approverCORPID=' + encodeURIComponent(user.corpId) +      // <--NEW INSERT
+            '&sentAt=' + encodeURIComponent(sentAt);                    // <--NEW INSERT
+          return (
+            `<tr><td>${name}</td>` +
+            `<td><a href="${approveUrl}" ` +                            // <--CHANGED
+            `style="background:#4CAF50;color:white;` +                  
+            `padding:5px 10px;text-decoration:none;border-radius:4px;">` +
+            `here</a> to Approve</td></tr>`                             // <--CHANGED
+          );
+        })
+        .join('');
+
+      bodyLines = [
+        '<html><body>',                                                 // <-- context
+        'Dear Approver,',                                               // <-- context
+        '<br><br>',
+        'Please approve the following documents:',
+        '<br><br>',
+        '<table border="1" cellpadding="5" cellspacing="0">',
+        '<tr><th>Document</th><th>Action</th></tr>',
+        rowsHtml,
+        '</table>',
+        `<p>Click ${actionLink} to approve all selected documents.</p>`,
+        '<br><br>',
+        'Regards,<br>',
+        'Document Control Officer',
+        '</body></html>'
+      ];
+   } else { 
+    subject = `Read Request: ${selectedDocNames.join(', ')}`;
+    const appBaseUrl = window.location.origin;                            // <--NEW INSERT
+    const sentAt = new Date().toISOString();                              // <--NEW INSERT
+
+    const rowsHtml = selectedDocNames                                     // <--NEW INSERT
+      .map(name => {                                                      // <--NEW INSERT
+        const readUrl =                                                   // <--NEW INSERT
+          appBaseUrl +                                                    // <--NEW INSERT
+          '?readDoc=' + encodeURIComponent(name) +                        // <--NEW INSERT
+          '&readerCORPID=' + encodeURIComponent(user.corpId) +           // <--NEW INSERT
+          '&sentAt=' + encodeURIComponent(sentAt);                       // <--NEW INSERT
+        return (
+          `<tr><td>${name}</td>` +                                        // <--NEW INSERT
+          `<td><a href="${readUrl}" ` +                                   // <--NEW INSERT
+          `style="background:#FF9800;color:white;` +
+          `padding:5px 10px;text-decoration:none;border-radius:4px;">` +
+          `here</a> to Mark Read</td></tr>`                               // <--NEW INSERT
+        );
+      })
+      .join('');                                                          // <--NEW INSERT
+
+    bodyLines = [
+      '<html><body>',                                                     // <--CHANGED
+      'Dear User,',                                                       // <--CHANGED
+      '<br><br>',                                                         // <--CHANGED
+      'Please read the following documents:',                             // <--CHANGED
+      '<br><br>',                                                         // <--CHANGED
+      '<table border="1" cellpadding="5" cellspacing="0">',               // <--CHANGED
+      '<tr><th>Document</th><th>Action</th></tr>',                        // <--CHANGED
+      rowsHtml,                                                           // <--CHANGED
+      '</table>',                                                         // <--CHANGED
+      '<br><br>',                                                         // <--CHANGED
+      'Regards,<br>',                                                     // <--CHANGED
+      'Document Control Officer',                                         // <--CHANGED
+      '</body></html>'                                                    // <--CHANGED
+    ];
+  }
+    
+    const body = encodeURIComponent(bodyLines.join('\n'));
+    const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${body}`;
+    window.open(mailtoLink);
+  });
+
+ 
+  selectedDocNames.forEach(docName => {
+    if(!approvals[docName]) {
+      approvals[docName] = { approveRequestedBy: [], readRequestedBy: [], approvedBy: [], readBy: [] };
+    }
+    const doc = documents.find(d => d.name === docName);
+    if(!doc) return;
+    if(!doc.assignedUsers) doc.assignedUsers = [];
+    
+    selectedUserCids.forEach(cid => {
+      if(!doc.assignedUsers.includes(cid)) {
+      doc.assignedUsers.push(cid);
+      }
+    });
+    
+    selectedUserCids.forEach(cid => {
+      if(requestType === 'approve') {
+        if(!approvals[docName].approveRequestedBy.includes(cid) && 
+           !approvals[docName].approvedBy?.find(a => a.corpId === cid)) {
+          approvals[docName].approveRequestedBy.push(cid);
+        }
+      } else if(requestType === 'read') {
+        if(!approvals[docName].readRequestedBy.includes(cid) && 
+           !approvals[docName].readBy?.find(r => r.corpId === cid)) {
+          approvals[docName].readRequestedBy.push(cid);
+        }
+      }
+    });
+  });
+  
+  // ✅ FINAL CLEANUP & SUCCESS (Step 7)
+  document.querySelectorAll('input.docSelectCheckbox:checked, input.userCheckbox:checked').forEach(chk => chk.checked = false);
+  if(usersSelectAllCheckbox) usersSelectAllCheckbox.checked = false;
+  if(selectAllDocsCheckbox) selectAllDocsCheckbox.checked = false;
+  
+  saveData();
+  alert('✅ REQUEST SUBMITTED SUCCESSFULLY!\nOutlook emails opened for selected approvers.');
+  
+  renderDocumentsTable(currentPage);
+  if(currentUser && !currentUser.rights.includes('upload')) {
+    renderUserDocuments();
+    renderUserReads();
+    updateSelectAllStatus();
+  }
+};
+
+
+
+function getUserApprovalItems() {
+  const userCid = currentUser.corpId.toLowerCase();
+  const assignedDocs = documents.filter(d => d.assignedUsers && d.assignedUsers.includes(userCid));
+  const items = [];
+  assignedDocs.forEach(doc => {
+    const approveReq = approvals[doc.name]?.approveRequestedBy;                 // <-- CHANGED
+    const approved = approvals[doc.name]?.approvedBy;                           // <-- CHANGED
+    const approvedEntry = approved?.find(a => a.corpId === userCid) || null;   // <-- CHANGED
+    if (!approveReq || !approveReq.includes(userCid)) {                        // <-- CHANGED
+      // still include row even if no pending approve; rely on approvedEntry    // <-- CHANGED
+    }                                                                          // <-- CHANGED
+
+    if (approvedEntry && approvedEntry.timestamp && !doc.approvedAt) {         // <-- CHANGED
+      doc.approvedAt = approvedEntry.timestamp;                                 // <-- CHANGED
+    }                                                                           // <-- CHANGED
+
+    items.push({ name: doc.name, path: doc.path, approvedEntry });             // <-- CHANGED
+  });
+  return items;
+}
+
+function getUserReadItems() {
+  const userCid = currentUser.corpId.toLowerCase();
+  const assignedDocs = documents.filter(d => d.assignedUsers && d.assignedUsers.includes(userCid));
+  const items = [];
+  assignedDocs.forEach(doc => {
+    const readReq = approvals[doc.name]?.readRequestedBy;                      // <-- CHANGED
+    const approved = approvals[doc.name]?.approvedBy || [];                    // <-- CHANGED
+    const read = approvals[doc.name]?.readBy || [];                            // <-- CHANGED
+    if (!approved.length) return;                                              // keep rule: only after approval
+    const readEntry = read.find(r => r.corpId === userCid) || null;            // <-- CHANGED
+    // Do NOT filter out when not pending; always keep row                     // <-- CHANGED
+    items.push({ name: doc.name, path: doc.path, readEntry });                 // <-- CHANGED
+  });
+  return items;
+}
+
+
+function renderUserDocuments(){
+  approvalTableBody.innerHTML = '';
+  userApprovalPaginationSelect.innerHTML = '';
+  const items = getUserApprovalItems();
+
+  // Sort pending approvals for this user                                 // <-- CHANGED
+  const sortBy = userApprovalSortBy ? userApprovalSortBy.value : 'docName';   // <-- CHANGED
+  const sortDir = userApprovalSortDir ? userApprovalSortDir.value : 'asc';    // <-- CHANGED
+  items.sort((a, b) => {                                                  // <-- CHANGED
+    let aKey, bKey;                                                       // <-- CHANGED
+    if (sortBy === 'docName') {                                           // <-- CHANGED
+      aKey = a.name.toLowerCase();                                        // <-- CHANGED
+      bKey = b.name.toLowerCase();                                        // <-- CHANGED
+    } else { // actionTime                                                // <-- CHANGED
+      const tA = a.approvedEntry ? new Date(a.approvedEntry.timestamp).getTime() : 0; // <-- CHANGED
+      const tB = b.approvedEntry ? new Date(b.approvedEntry.timestamp).getTime() : 0; // <-- CHANGED
+      aKey = tA;                                                          // <-- CHANGED
+      bKey = tB;                                                          // <-- CHANGED
+    }                                                                     // <-- CHANGED
+    if (aKey < bKey) return sortDir === 'asc' ? -1 : 1;                   // <-- CHANGED
+    if (aKey > bKey) return sortDir === 'asc' ? 1 : -1;                   // <-- CHANGED
+    return 0;                                                             // <-- CHANGED
+  });                                                                     // <-- CHANGED
+
+  if(!items.length){
+    approvalTableBody.innerHTML = '<tr><td colspan="4">No documents assigned.</td></tr>';
+    userApprovalPaginationContainer.style.display = 'none';
+    updateSelectAllStatus();
+    return;
+  }
+    const totalPages = Math.ceil(items.length / PAGE_SIZE);
+  if (currentUserApprovalPage > totalPages) currentUserApprovalPage = totalPages;
+  if (totalPages > 1) {
+    userApprovalPaginationContainer.style.display = 'block';
+    for (let i = 1; i <= totalPages; i++) {
+      const startDocNum = (i - 1) * PAGE_SIZE + 1;
+      const endDocNum = Math.min(i * PAGE_SIZE, items.length);
+      const option = document.createElement('option');
+      option.value = i;
+      option.textContent = `Documents ${startDocNum}-${endDocNum}`;
+      if (i === currentUserApprovalPage) option.selected = true;
+      userApprovalPaginationSelect.appendChild(option);
+    }
+  } else {
+    userApprovalPaginationContainer.style.display = 'none';
+  }
+  userApprovalPaginationSelect.onchange = () => {
+    currentUserApprovalPage = Number(userApprovalPaginationSelect.value);
+    renderUserDocuments();
+  };
+   const startIndex = (currentUserReadPage - 1) * PAGE_SIZE;
+  const pageItems = items.slice(startIndex, startIndex + PAGE_SIZE);
+  readTableBody.innerHTML = '';
+  pageItems.forEach(item => {                                            <!--CHANGED-->
+    const tr = document.createElement('tr');                             <!--CHANGED-->
+    const checkboxCell =
+      `<td><input type="checkbox" class="pendingReadCheckbox" data-doc="${item.name}"></td>`; <!--CHANGED-->
+    let actionCellContent = '';                                          <!--CHANGED-->
+    if (item.readEntry && item.readEntry.timestamp) {                    <!--CHANGED-->
+      actionCellContent = item.readEntry.timestamp;                      <!--CHANGED-->
+    } else {                                                             <!--CHANGED-->
+      actionCellContent =
+        `<button class="btn-mark-read" data-doc="${item.name}">Mark Read</button>`; <!--CHANGED-->
+    }                                                                    <!--CHANGED-->
+    tr.innerHTML =                                                       <!--CHANGED-->
+      `${checkboxCell}<td>${item.name}</td><td>${actionCellContent}</td>`; <!--CHANGED-->
+    readTableBody.appendChild(tr);                                       <!--CHANGED-->
+  });
+  updateSelectAllStatus();
+
+}
+
+function renderUserReviews() {            
+    if (!currentUser) return;
+    const userCid = currentUser.corpId.toLowerCase();
+    const assignedDocs = documents.filter(d => d.assignedUsers && d.assignedUsers.includes(userCid));
+    const items = [];
+    assignedDocs.forEach(doc => {
+
+      const reviewReq = approvals[doc.name]?.reviewRequestedBy || approvals[doc.name]?.reviewrequestedby || []; 
+      const reviewed = approvals[doc.name]?.reviewedBy || approvals[doc.name]?.reviewedby || [];                
+      const reviewEntry = reviewed.find(r => r.corpId === currentUser.corpId) || null;                          
+      const reqArr = Array.isArray(reviewReq) ? reviewReq : (reviewReq || '').split(',').filter(x => x);       
+      if (!reqArr.map(c => c.toLowerCase()).includes(userCid)) return; <!--CHANGED-->
+      items.push({ name: doc.name, path: doc.path, reviewEntry });                                              
+    });
+
+                                                                                                    
+    const reviewTableBody = document.querySelector('#pendingReviewTable tbody');      // <-- CHANGED
+    reviewTableBody.innerHTML = '';                                                   // <-- CHANGED
+    userReviewPaginationSelect.innerHTML = '';                                        // <-- CHANGED
+
+    if (!items.length) {                                                              // <-- CHANGED
+        reviewTableBody.innerHTML =
+            '<tr><td colspan="3" style="text-align:center">No documents assigned.</td></tr>'; // <-- CHANGED
+        userReviewPaginationContainer.style.display = 'none';                        // <-- CHANGED
+        updateSelectAllStatus();                                                     // <-- CHANGED
+        return;                                                                      // <-- CHANGED
+    }                                                                                // <-- CHANGED
+
+     const totalPages = Math.ceil(items.length / PAGE_SIZE);
+  if (currentUserReviewPage > totalPages) currentUserReviewPage = totalPages;
+  if (totalPages > 1) {
+    userReviewPaginationContainer.style.display = 'block';
+    for (let i = 1; i <= totalPages; i++) {
+      const startDocNum = (i - 1) * PAGE_SIZE + 1;
+      const endDocNum = Math.min(i * PAGE_SIZE, items.length);
+      const option = document.createElement('option');
+      option.value = i;
+      option.textContent = `Documents ${startDocNum}-${endDocNum}`;
+      if (i === currentUserReviewPage) option.selected = true;
+      userReviewPaginationSelect.appendChild(option);
+    }
+  } else {
+    userReviewPaginationContainer.style.display = 'none';
+  }
+  userReviewPaginationSelect.onchange = () => {
+    currentUserReviewPage = Number(userReviewPaginationSelect.value);
+    renderUserReviews();
+  };
+  const startIndex = (currentUserReviewPage - 1) * PAGE_SIZE;
+  const pageItems = items.slice(startIndex, startIndex + PAGE_SIZE);
+  reviewTableBody.innerHTML = '';                                       // <-- CHANGED
+  pageItems.forEach(item => {                                           // <-- CHANGED
+    const tr = document.createElement('tr');                            // <-- CHANGED
+    const checkboxCell =
+      `<td><input type="checkbox" class="pendingReviewCheckbox" data-doc="${item.name}"></td>`; // <-- CHANGED
+    let actionCellContent = '';                                         // <-- CHANGED
+    if (item.reviewEntry && item.reviewEntry.timestamp) {               // <-- CHANGED
+      actionCellContent = item.reviewEntry.timestamp;                   // <-- CHANGED
+    } else {                                                            // <-- CHANGED
+      actionCellContent =
+        `<button class="btn-acknowledge" data-doc="${item.name}">Acknowledge</button>`; // <-- CHANGED
+    }                                                                   // <-- CHANGED
+    tr.innerHTML =
+      `<td>${item.name}</td><td>${actionCellContent}</td>${checkboxCell}`; // <-- CHANGED
+    reviewTableBody.appendChild(tr);                                    // <-- CHANGED
+  });
+  updateSelectAllStatus();
+}
+                                                                   
+function renderUserReads(){
+  readTableBody.innerHTML = '';
+  userReadPaginationSelect.innerHTML = '';
+   if (!currentUser) {                                                   <!--CHANGED-->
+    userReadPaginationContainer.style.display = 'none';                 <!--CHANGED-->
+    updateSelectAllStatus();                                            <!--CHANGED-->
+    return;                                                             <!--CHANGED-->
+  }                                                                     <!--CHANGED-->
+  const userCid = currentUser.corpId.toLowerCase();                     <!--CHANGED-->
+  const items = [];                                                     <!--CHANGED-->
+  documents.forEach(doc => {                                            <!--CHANGED-->
+    const appr = approvals[doc.name] || {};                             <!--CHANGED-->
+    const reqArr = (appr.readRequestedBy || []).map(c => c.toLowerCase()); <!--CHANGED-->
+    const readArr = (appr.readBy || []).filter(r => r && r.corpId);     <!--CHANGED-->
+    const readEntry = readArr.find(r => r.corpId === currentUser.corpId) || null; <!--CHANGED-->
+    if (!reqArr.includes(userCid)) return;                              <!--CHANGED-->
+    items.push({ name: doc.name, readEntry });                          <!--CHANGED-->
+  });                                                                    <!--CHANGED-->
+
+  items.sort((a, b) => {
+    const aPending = !a.readEntry;
+    const bPending = !b.readEntry;
+    if(aPending !== bPending) return aPending ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
+  if(!items.length){
+    readTableBody.innerHTML = '<tr><td colspan="4">No documents assigned.</td></tr>';
+    userReadPaginationContainer.style.display = 'none';
+    updateSelectAllStatus();
+    return;
+  }
+    const totalPages = Math.ceil(items.length / PAGE_SIZE);
+  if (currentUserReadPage > totalPages) currentUserReadPage = totalPages;
+  if (totalPages > 1) {
+    userReadPaginationContainer.style.display = 'block';
+    for (let i = 1; i <= totalPages; i++) {
+      const startDocNum = (i - 1) * PAGE_SIZE + 1;
+      const endDocNum = Math.min(i * PAGE_SIZE, items.length);
+      const option = document.createElement('option');
+      option.value = i;
+      option.textContent = `Documents ${startDocNum}-${endDocNum}`;
+      if (i === currentUserReadPage) option.selected = true;
+      userReadPaginationSelect.appendChild(option);
+    }
+  } else {
+    userReadPaginationContainer.style.display = 'none';
+  }
+  userReadPaginationSelect.onchange = () => {
+    currentUserReadPage = Number(userReadPaginationSelect.value);
+    renderUserReads();
+  };
+  const startIndex = (currentUserReadPage - 1) * PAGE_SIZE;
+  const pageItems = items.slice(startIndex, startIndex + PAGE_SIZE);
+  readTableBody.innerHTML = '';                                         // <-- CHANGED
+  pageItems.forEach(doc => {                                           <!--CHANGED-->
+    const appr = approvals[doc.name] || {};                            <!--CHANGED-->
+    const myCid = currentUser.corpId.toLowerCase();                    <!--CHANGED-->
+    const requestedList = (appr.readRequestedBy || []).map(c => c.toLowerCase()); <!--CHANGED-->
+    if (!requestedList.includes(myCid)) return;                        <!--CHANGED-->
+
+    const tr = document.createElement('tr');                           <!--CHANGED-->
+    tr.innerHTML = `                                                  <!--CHANGED-->
+      <td><input type="checkbox" class="pendingReadCheckbox" data-doc="${doc.name}"></td>
+      <td>${doc.name}</td>
+      <td>
+        <button class="btn-mark-read" data-doc="${doc.name}">Mark Read</button>
+      </td>
+    `;
+    readTableBody.appendChild(tr);
+  });                                                                   <!--CHANGED-->
+  updateSelectAllStatus();
+}
+
+
+
+// INSIDE renderUserDocuments - replace approvalTableBody.onclick section:
+approvalTableBody.onclick = async (e) => {
+  if (e.target.classList.contains('btn-approve')) {
+    const docName = e.target.dataset.doc;
+    if (!currentUser?.rights?.includes('approve')) {
+      alert('Approve rights required.');
+      return;
+    }
+    
+        // Ensure approvals entry exists
+    if (!approvals[docName]) {
+      approvals[docName] = { approveRequestedBy: [], readRequestedBy: [], approvedBy: [], readBy: [] };
+    }
+    approvals[docName].approvedBy = approvals[docName].approvedBy || [];           <!--CHANGED-->
+    approvals[docName].approveRequestedBy = approvals[docName].approveRequestedBy || []; <!--CHANGED-->
+
+    if (!approvals[docName].approvedBy?.find(a => a.corpId === currentUser.corpId)) {
+      const timestamp = new Date().toLocaleString('en-GB', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+
+      approvals[docName].approvedBy.push({
+        corpId: currentUser.corpId,
+        fullName: currentUser.fullName,
+        timestamp: timestamp
+      });
+      approvals[docName].approveRequestedBy = approvals[docName].approveRequestedBy.filter(cid => cid !== currentUser.corpId);
+      
+ 
+      const doc = documents.find(d => d.name === docName);
+      if (doc) doc.approvedAt = new Date();
+      await saveData();  
+     
+      renderUserDocuments();        
+      renderUserReads();
+      renderDocumentsTable(currentPage);
+      showMessage(`You approved ${docName}`, false);
+      updateSelectAllStatus();
+    }
+  }
+};
+
+reviewTableBody.onclick = async (e) => {                               <!--CHANGED-->
+  if (e.target.classList.contains('btn-acknowledge')) {
+    const docName = e.target.dataset.doc;
+    const changed = markDocumentReviewForUser(
+      docName, currentUser.corpId, currentUser.fullName
+    );
+    if (changed) {
+      const timestamp = new Date().toLocaleString('en-GB', {          <!--CHANGED-->
+        day: '2-digit', month: '2-digit', year: 'numeric',            <!--CHANGED-->
+        hour: '2-digit', minute: '2-digit', second: '2-digit'         <!--CHANGED-->
+      });                                                             <!--CHANGED-->
+
+      await saveData();                                               <!--NEW INSERT-->
+      renderUserReviews();                                            <!--CHANGED-->
+      renderDocumentsTable(currentPage);                              <!--CHANGED-->
+      showMessage(`You acknowledged review for ${docName}`, false);
+      updateSelectAllStatus();
+    }
+  }
+};
+
+readTableBody.onclick = async (e) => {                                <!--CHANGED-->
+  if (e.target.classList.contains('btn-mark-read')) {
+    const docName = e.target.dataset.doc;
+    const changed = markDocumentReadForUser(
+      docName, currentUser.corpId, currentUser.fullName
+    );
+    if (changed) {
+      const timestamp = new Date().toLocaleString('en-GB', {          <!--CHANGED-->
+        day: '2-digit', month: '2-digit', year: 'numeric',            <!--CHANGED-->
+        hour: '2-digit', minute: '2-digit', second: '2-digit'         <!--CHANGED-->
+      });                                                             <!--CHANGED-->
+
+      await saveData();                                               <!--NEW INSERT-->
+      renderUserReads();                                              <!--CHANGED-->
+      renderDocumentsTable(currentPage);                              <!--CHANGED-->
+      showMessage(`You read ${docName}`, false);
+      updateSelectAllStatus();
+    }
+  }
+};
+
+
+selectAllPendingReadsCheckbox.addEventListener('change', e => {
+  const checked = e.target.checked;
+  document.querySelectorAll('.pendingReadCheckbox').forEach(chk => chk.checked = checked);
+});
+
+function markDocumentReadForUser(docName, corpId, fullName) {
+  if (!approvals[docName]) {
+    approvals[docName] = {
+      approveRequestedBy: [],
+      readRequestedBy: [],
+      approvedBy: [],
+      readBy: []
+    };
+  }
+  if (!approvals[docName].readBy) approvals[docName].readBy = [];
+  const existing = approvals[docName].readBy.find(r => r.corpId === corpId);
+  if (existing) {
+    return false;
+  }
+  const timestamp = new Date().toLocaleString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+  approvals[docName].readBy.push({ corpId, fullName, timestamp });
+  approvals[docName].readRequestedBy =
+    approvals[docName].readRequestedBy.filter(cid => cid !== corpId);
+  saveData();
+  return true;
+}
+
+async function handleReadFromEmail(docName, corpId, fullName) {
+  const changed = markDocumentReadForUser(docName, corpId, fullName);
+  if (changed) await saveData();
+}
+
+function handleApproveFromEmail(docName, corpId, fullName) {                  // <-- NEW INSERT
+  if (!approvals[docName]) {                                                 // <-- NEW INSERT
+    approvals[docName] = {                                                   // <-- NEW INSERT
+      approveRequestedBy: [],                                                // <-- NEW INSERT
+      readRequestedBy: [],                                                   // <-- NEW INSERT
+      approvedBy: [],                                                        // <-- NEW INSERT
+      readBy: []                                                             // <-- NEW INSERT
+    };                                                                       // <-- NEW INSERT
+  }                                                                          // <-- NEW INSERT
+  if (!approvals[docName].approvedBy) approvals[docName].approvedBy = [];   // <-- NEW INSERT
+  const existing = approvals[docName].approvedBy.find(a => a.corpId === corpId); // <-- NEW INSERT
+  if (existing) {                                                            // <-- NEW INSERT
+    return;                                                                  // <-- NEW INSERT
+  }                                                                          // <-- NEW INSERT
+  const timestamp = new Date().toLocaleString('en-GB', {                    // <-- NEW INSERT
+    day: '2-digit',                                                         // <-- NEW INSERT
+    month: '2-digit',                                                       // <-- NEW INSERT
+    year: 'numeric',                                                        // <-- NEW INSERT
+    hour: '2-digit',                                                        // <-- NEW INSERT
+    minute: '2-digit',                                                      // <-- NEW INSERT
+    second: '2-digit'                                                       // <-- NEW INSERT
+  });                                                                        // <-- NEW INSERT
+  approvals[docName].approvedBy.push({ corpId, fullName, timestamp });      // <-- NEW INSERT
+  approvals[docName].approveRequestedBy =                                   // <-- NEW INSERT
+    (approvals[docName].approveRequestedBy || []).filter(cid => cid !== corpId); // <-- NEW INSERT
+  saveData();                                                               // <-- NEW INSERT
+}                                                                            // <-- NEW INSERT
+
+approveAllBtn.onclick = () => {
+  // DISABLE APPROVE for read-only users
+  if (currentUser && !currentUser.rights.includes('approve')) {
+
+
+
+
+
+
+
+
+
+
+    alert('Read-only users cannot approve documents.');
+    return;
+}
+
+
+  const checkboxes = Array.from(document.querySelectorAll('.pendingApprovalCheckbox:checked'));
+  
+  // **1. BLOCK READ-ONLY USERS FIRST** (ALWAYS)
+  if(currentUser.rights === 'read') {
+    alert("Users with Read Only rights cannot approve documents!");
+    return;
+  }
+  
+  
+  // **3. PROCESS APPROVALS**
+  checkboxes.forEach(chk => {
+    const docName = chk.dataset.doc;
+    
+    // **4. SAFETY CHECK**
+    if(!approvals[docName]) {
+      approvals[docName] = { approveRequestedBy: [], readRequestedBy: [], approvedBy: [], readBy: [] };
+    }
+    
+    if(!approvals[docName].approvedBy.find(a => a.corpId === currentUser.corpId)) {
+      approvals[docName].approvedBy.push({
+        corpId: currentUser.corpId, 
+        fullName: currentUser.fullName, 
+        timestamp: new Date().toLocaleString()
+      });
+      approvals[docName].approveRequestedBy = approvals[docName].approveRequestedBy.filter(cid => cid !== currentUser.corpId);
+    }
+  });
+  
+  saveData();
+  renderUserDocuments();
+  renderUserReads();
+  renderDocumentsTable();
+  showMessage("Selected documents approved.", false);
+  updateSelectAllStatus();
+};
+
+
+readAllBtn.onclick = () => {
+  const checkboxes = Array.from(document.querySelectorAll('.pendingReadCheckbox:checked'));
+  if(checkboxes.length === 0){
+    alert('Select at least one document to mark as read.');
+    return;
+  }
+  checkboxes.forEach(chk => {
+    const docName = chk.dataset.doc;
+    if(!approvals[docName].readBy.find(r => r.corpId === currentUser.corpId)){
+      approvals[docName].readBy.push({corpId:currentUser.corpId, fullName: currentUser.fullName, timestamp: new Date().toLocaleString()});
+      approvals[docName].readRequestedBy = approvals[docName].readRequestedBy.filter(cid => cid !== currentUser.corpId);
+    }
+  });
+  saveData();
+  renderUserReads();
+  renderDocumentsTable();
+  showMessage('Selected documents marked as read.', false);
+  updateSelectAllStatus();
+};
+
+exportApprovalsCSVBtn.onclick = () => {
+  const selectedDocNames = Array.from(document.querySelectorAll('.docSelectCheckbox:checked')).map(chk => chk.dataset.docname);
+  if(selectedDocNames.length === 0){
+    alert('Select at least one document to export approvals CSV.');
+    return;
+  }
+  let csv = '"Document","User","Action","Approval date and time"\n';
+  selectedDocNames.forEach(docName => {
+    (approvals[docName]?.approvedBy || []).forEach(a => {
+      csv += `"${docName}","${a.fullName}","Approved","${a.timestamp}"\n`;
+    });
+    (approvals[docName]?.approveRequestedBy || []).forEach(cid => {
+      const u = users.find(u => u.corpId === cid);
+      if(u) csv += `"${docName}","${u.fullName}","Request Approve",""\n`;
+    });
+  });
+  downloadCSV(csv, 'Approvals.csv');
+};
+
+exportReadsCSVBtn.onclick = () => {
+  const selectedDocNames = Array.from(document.querySelectorAll('.docSelectCheckbox:checked')).map(chk => chk.dataset.docname);
+  if(selectedDocNames.length === 0){
+    alert('Select at least one document to export reads CSV.');
+    return;
+  }
+  let csv = '"Document","User","Action","Read date and time"\n';
+  selectedDocNames.forEach(docName => {
+    (approvals[docName]?.readBy || []).forEach(r => {
+      csv += `"${docName}","${r.fullName}","Read","${r.timestamp}"\n`;
+    });
+  });
+  downloadCSV(csv, 'Reads.csv');
+};
+
+exportReviewsCSVBtn.onclick = function() {                                // <-- CHANGED
+  const rows = [];                                                        // <-- CHANGED
+  // header                                                               // <-- CHANGED
+  rows.push(['Document Name','User Full Name','Action','Action Date/Time']); // <-- CHANGED
+
+  documents.forEach(doc => {                                              // <-- CHANGED
+    const docName = doc.name;                                             // <-- CHANGED
+    const rev = approvals[docName]?.reviewedBy || [];                     // <-- CHANGED
+    rev.forEach(r => {                                                    // <-- CHANGED
+      const dt = new Date(r.timestamp).toLocaleString('en-GB', {         // <-- CHANGED
+        day:'2-digit', month:'2-digit', year:'numeric',                  // <-- CHANGED
+        hour:'2-digit', minute:'2-digit', second:'2-digit'               // <-- CHANGED
+      });                                                                 // <-- CHANGED
+      rows.push([docName, r.fullName || r.corpId, 'Acknowledge', dt]);    // <-- CHANGED
+    });                                                                   // <-- CHANGED
+  });                                                                     // <-- CHANGED
+
+  const csv = rows.map(r => r.map(v => `"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n'); // <-- CHANGED
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });     // <-- CHANGED
+  const url = URL.createObjectURL(blob);                                 // <-- CHANGED
+  const a = document.createElement('a');                                  // <-- CHANGED
+  a.href = url;                                                           // <-- CHANGED
+  a.download = 'reviews_export.csv';                                      // <-- CHANGED
+  a.click();                                                              // <-- CHANGED
+  URL.revokeObjectURL(url);                                              // <-- CHANGED
+};                                                                        // <-- CHANGED
+
+
+
+function downloadCSV(csv, filename){
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+refreshPendingApprovalBtn.onclick = () => renderUserDocuments();
+refreshPendingReadBtn.onclick = () => renderUserReads();
+refreshPendingReviewBtn.onclick = renderUserReviews; 
+
+userBackToAdminBtn.onclick = () => {
+  if(currentUser && currentUser.rights.includes('upload')) {
+  if(currentUser.originalRights) {   
+  currentUser.rights = currentUser.originalRights;
+  delete currentUser.originalRights;
+    }
+    showPage('admin');
+  }
+};
+
+
+function parseURLParams() {
+  const params = new URLSearchParams(window.location.search);
+  const result = {};
+  for (const [key, value] of params.entries()) {
+    result[key] = value;
+  }
+  return result;
+}
+
+function parseDocsListParam(paramValue) {                                // <--NEW INSERT
+  return !paramValue                                                     // <--NEW INSERT
+    ? []                                                                 // <--NEW INSERT
+    : paramValue.split(",").map(d => decodeURIComponent(d.trim())).filter(Boolean); // <--NEW INSERT
+}                                                                        // <--NEW INSERT
+
+
+
+function isEmailLinkExpired(sentAtParam) {                         <!--NEW INSERT-->
+  if (!sentAtParam) return false;                                  <!--NEW INSERT-->
+  const sentTime = new Date(sentAtParam).getTime();                <!--NEW INSERT-->
+  if (isNaN(sentTime)) return false;                               <!--NEW INSERT-->
+  const now = Date.now();                                          <!--NEW INSERT-->
+  const diffHours = (now - sentTime) / (1000 * 60 * 60);           <!--NEW INSERT-->
+  return diffHours > 168; // 7 days                                <!--NEW INSERT-->
+}                                                                  <!--NEW INSERT-->
+
+
+
+
+
+async function handleReadFromEmail() {
+  const params = parseURLParams();
+  const docName = params.readDoc;
+  const corpId = params.userCORP_ID ? params.userCORP_ID.toLowerCase() : null;
+  const sentAt = params.sentAt;                                      <!--NEW INSERT-->
+  if (!docName || !corpId) return;
+
+  if (isEmailLinkExpired(sentAt)) {                                  <!--NEW INSERT-->
+    alert('Action link expired. Please log in User Dashboard to Mark Read.'); <!--NEW INSERT-->
+    return;                                                          <!--NEW INSERT-->
+  }                                                                  <!--NEW INSERT-->
+
+  const user = users.find(u => u.corpId === corpId);
+  if (!user) return;
+
+  if (!approvals[docName]) {
+    approvals[docName] = {
+      approveRequestedBy: [],
+      readRequestedBy: [],
+      approvedBy: [],
+      readBy: [],
+      readRequestSentAt: null,
+      reviewRequestedBy: [],
+      reviewedBy: []
+    };
+  }
+
+  const readArr = approvals[docName].readBy || [];
+  const existing = readArr.find(r => r.corpId === user.corpId);
+  if (existing && existing.timestamp) {
+    alert(`Read for "${docName}" already recorded.`);
+    return;
+  }
+
+  const changed = markDocumentReadForUser(docName, corpId, user.fullName);
+  if (changed) {
+    await saveData();
+    alert(`You have marked "${docName}" as read via email.`);
+  }
+}
+
+
+// NEW: show confirm UI for approve-from-email
+async function handleApproveFromEmailUI() {
+  const params    = parseURLParams();
+  const docsParam = params.approveDocs || params.approveDoc;
+  const docNames  = docsParam
+    ? docsParam.split(",").map(d => decodeURIComponent(d.trim())).filter(Boolean)
+    : [];
+  const corpId    = params.approverCORPID
+    ? params.approverCORPID.toLowerCase()
+    : null;
+  const sentAt    = params.sentAt;
+
+  if (!docNames.length || !corpId) return;
+
+  const user     = users?.find(u => u.corpId.toLowerCase() === corpId);
+  const firstDoc = documents?.find(d => d.name === docNames[0]);
+  if (!user || !firstDoc) return;
+
+  if (isEmailLinkExpired(sentAt)) {
+    document.body.innerHTML = "";
+    const msg = document.createElement("p");
+    msg.textContent =
+      "Action link expired. Please log in User Dashboard to Approve.";
+    msg.style.fontFamily = "Arial, sans-serif";
+    msg.style.margin = "40px";
+    document.body.appendChild(msg);
+    return;
+  }
+
+  document.body.innerHTML = "";
+  const container = document.createElement("div");
+  container.style.fontFamily = "Arial, sans-serif";
+  container.style.margin = "40px";
+  container.style.maxWidth = "480px";
+
+  const heading = document.createElement("h2");
+  heading.textContent = "Email Approval Confirmation";
+
+  const question = document.createElement("p");
+  question.textContent = `Approve ${docNames.length} document(s) as ${user.fullName} (${user.corpId})?`;
+
+  const btn = document.createElement("button");
+  btn.textContent = "Confirm Approval";
+  btn.style.padding = "8px 16px";
+  btn.style.backgroundColor = "#4CAF50";
+  btn.style.color = "#fff";
+  btn.style.border = "none";
+  btn.style.cursor = "pointer";
+  btn.style.borderRadius = "4px";
+
+  const status = document.createElement("p");
+  status.style.marginTop = "15px";
+  status.style.fontSize = "0.9em";
+
+  // PRECHECK already approved? (only checks first doc for simplicity)
+  if (!approvals[firstDoc.name]) {
+    approvals[firstDoc.name] = {
+      approveRequestedBy: [],
+      readRequestedBy: [],
+      approvedBy: [],
+      readBy: [],
+      reviewRequestedBy: [],
+      reviewedBy: []
+    };
+  }
+  const preAppr = approvals[firstDoc.name];
+  if (!Array.isArray(preAppr.approvedBy)) preAppr.approvedBy = [];
+  const preExisting = preAppr.approvedBy.find(a => a.corpId === user.corpId);
+  if (preExisting && preExisting.timestamp) {
+    status.style.color = "green";
+    status.textContent = "Document approval already done.";
+    btn.disabled = true;
+  }
+
+  btn.onclick = async () => {
+    if (btn.disabled) return;
+    btn.disabled = true;
+    status.textContent = "Recording your approval...";
+    try {
+      let anyChanged = false;
+      for (const dn of docNames) {
+        const doc = documents.find(d => d.name === dn);
+        if (!doc) continue;
+        if (!approvals[dn]) {
+          approvals[dn] = {
+            approveRequestedBy: [],
+            readRequestedBy: [],
+            approvedBy: [],
+            readBy: [],
+            reviewRequestedBy: [],
+            reviewedBy: []
+          };
+        }
+        const appr = approvals[dn];
+        if (!Array.isArray(appr.approvedBy)) appr.approvedBy = [];
+        const already = appr.approvedBy.find(a => a.corpId === user.corpId);
+        if (!already) {
+          const ts = new Date().toLocaleString("en-GB", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit"
+          });
+          appr.approvedBy.push({
+            corpId: user.corpId,
+            fullName: user.fullName,
+            timestamp: ts
+          });
+          appr.approveRequestedBy = (appr.approveRequestedBy || [])
+            .filter(cid => cid !== user.corpId);
+          if (!doc.approvedAt) doc.approvedAt = ts;
+          anyChanged = true;
+        }
+      }
+      if (!anyChanged) {
+        status.style.color = "green";
+        status.textContent = "Document approval already done.";
+        return;
+      }
+      await saveData();
+      status.style.color = "green";
+      status.textContent =
+        "Approval recorded for all selected documents. You may close this window.";
+      setTimeout(() => window.close(), 1500);
+    } catch (err) {
+      console.error("Email approve failed", err);
+      btn.disabled = false;
+      status.style.color = "red";
+      status.textContent =
+        "Failed to record approval. Please try again later.";
+    }
+  };
+
+  container.appendChild(heading);
+  container.appendChild(question);
+  container.appendChild(btn);
+  container.appendChild(status);
+  document.body.appendChild(container);
+}
+
+
+
+
+
+// NEW: review acknowledge from email UI
+async function handleAcknowledgeFromEmailUI() {
+  const params = parseURLParams();
+  const docName = params.ackDoc;                                     // ?ackDoc=...
+  const corpId = params.reviewCORP_ID
+    ? params.reviewCORP_ID.toLowerCase()
+    : null;
+  const sentAt = params.sentAt;
+
+  if (!docName || !corpId) return;
+
+  if (isEmailLinkExpired(sentAt)) {
+    document.body.innerHTML = "";
+    const msg = document.createElement("p");
+    msg.textContent =
+      "Action link expired. Please log in User Dashboard to Acknowledge.";
+    msg.style.fontFamily = "Arial, sans-serif";
+    msg.style.margin = "40px";
+    document.body.appendChild(msg);
+    return;
+  }
+
+  const user = users?.find(u => u.corpId.toLowerCase() === corpId);
+  const doc  = documents?.find(d => d.name === docName);
+  if (!user || !doc) return;
+
+  document.body.innerHTML = "";
+  const container = document.createElement("div");
+  container.style.fontFamily = "Arial, sans-serif";
+  container.style.margin = "40px";
+  container.style.maxWidth = "480px";
+
+  const heading = document.createElement("h2");
+  heading.textContent = "Email Review Acknowledgement";
+
+  const question = document.createElement("p");
+  question.textContent =
+    `Acknowledge review of "${docName}" as ${user.fullName} (${user.corpId})?`;
+
+  const btn = document.createElement("button");
+  btn.textContent = "Confirm Acknowledge";
+  btn.style.padding = "8px 16px";
+  btn.style.backgroundColor = "#4CAF50";
+  btn.style.color = "#fff";
+  btn.style.border = "none";
+  btn.style.cursor = "pointer";
+  btn.style.borderRadius = "4px";
+
+  const status = document.createElement("p");
+  status.style.marginTop = "15px";
+  status.style.fontSize = "0.9em";
+
+  // PRE‑CHECK: already acknowledged?
+  if (!approvals[docName]) {
+    approvals[docName] = {
+      approveRequestedBy: [],
+      readRequestedBy: [],
+      approvedBy: [],
+      readBy: [],
+      reviewRequestedBy: [],
+      reviewedBy: []
+    };
+  }
+  const preAppr = approvals[docName];
+  if (!Array.isArray(preAppr.reviewedBy)) preAppr.reviewedBy = [];
+  const preExisting = preAppr.reviewedBy.find(r => r.corpId === user.corpId);
+  if (preExisting && preExisting.timestamp) {
+    status.style.color = "green";
+    status.textContent = "Document review already done.";
+    btn.disabled = true;
+  }
+
+  btn.onclick = async () => {
+    if (btn.disabled) return;
+    btn.disabled = true;
+    status.textContent = "Recording your acknowledgement...";
+    try {
+      const doc = documents.find(d => d.name === docName);
+      if (!doc) {
+        status.style.color = "red";
+        status.textContent =
+          "Failed to record acknowledgement. Document not found.";
+        btn.disabled = false;
+        return;
+      }
+
+      if (!approvals[docName]) {
+        approvals[docName] = {
+          approveRequestedBy: [],
+          readRequestedBy: [],
+          approvedBy: [],
+          readBy: [],
+          reviewRequestedBy: [],
+          reviewedBy: []
+        };
+      }
+
+      const appr = approvals[docName];
+      if (!Array.isArray(appr.reviewedBy)) appr.reviewedBy = [];
+      const already = appr.reviewedBy.find(r => r.corpId === user.corpId);
+      if (!already) {
+        const ts = new Date().toLocaleString("en-GB", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit"
+        });
+        appr.reviewedBy.push({
+          corpId: user.corpId,
+          fullName: user.fullName,
+          timestamp: ts
+        });
+      }
+
+      // remove this reviewer from requested list
+      appr.reviewRequestedBy = (appr.reviewRequestedBy || [])
+        .filter(cid => cid !== user.corpId);
+
+      await saveData();
+      status.style.color = "green";
+      status.textContent =
+        "Acknowledgement recorded. You may close this window.";
+      setTimeout(() => window.close(), 1500);
+    } catch (err) {
+      console.error("Email acknowledge failed", err);
+      btn.disabled = false;
+      status.style.color = "red";
+      status.textContent =
+        "Failed to record acknowledgement. Please try again later.";
+    }
+  };
+
+  container.appendChild(heading);
+  container.appendChild(question);
+  container.appendChild(btn);
+  container.appendChild(status);
+  document.body.appendChild(container);
+}
+
+
+/// NEW: read-required confirm UI from email
+async function handleReadRequiredFromEmailUI() {
+  const params    = parseURLParams();
+  const docsParam = params.readDocs || params.readDoc;                // <--CHANGED
+  const docNames  = parseDocsListParam(docsParam);                    // <--NEW INSERT
+  const corpId = params.readerCORPID
+    ? params.readerCORPID.toLowerCase()
+    : null;                                                           // e.g. &readerCORPID=ABC123
+
+  if (!docNames.length || !corpId) return;                            // <--CHANGED
+
+  const user     = users?.find(u => u.corpId.toLowerCase() === corpId);
+  const firstDoc = documents?.find(d => d.name === docNames[0]);      // <--NEW INSERT
+  if (!user || !firstDoc) return;                                     // <--CHANGED
+
+  document.body.innerHTML = "";
+  const container = document.createElement("div");
+  container.style.fontFamily = "Arial, sans-serif";
+  container.style.margin = "40px";
+  container.style.maxWidth = "480px";
+  container.style.marginTop = "40px";
+
+    const heading = document.createElement("h2");
+  heading.textContent = "Email Read Confirmation";
+
+  const question = document.createElement("p");
+  question.textContent =
+    `Confirm READ REQUIRED for ${docNames.length} document(s) as ${user.fullName} (${user.corpId})?`; // <--CHANGED
+
+
+  const btn = document.createElement("button");
+  btn.textContent = "Confirm Read";
+  btn.style.padding = "8px 16px";
+  btn.style.backgroundColor = "#4CAF50";
+  btn.style.color = "#fff";
+  btn.style.border = "none";
+  btn.style.cursor = "pointer";
+  btn.style.borderRadius = "4px";
+
+  const status = document.createElement("p");
+  status.style.marginTop = "15px";
+  status.style.fontSize = "0.9em";
+
+  btn.onclick = async () => {
+  btn.disabled = true;
+  status.textContent = "Recording your read confirmation...";
+  try {
+    let anyChanged = false;                                       // <--NEW INSERT
+    for (const dn of docNames) {                                  // <--NEW INSERT
+      const d = documents.find(x => x.name === dn);               // <--NEW INSERT
+      if (!d) continue;                                           // <--NEW INSERT
+      const changed = markDocumentReadForUser(
+        dn,
+        user.corpId,
+        user.fullName
+      );                                                          // <--CHANGED
+      if (changed) anyChanged = true;                             // <--NEW INSERT
+    }                                                             // <--NEW INSERT
+    if (anyChanged) {
+      await saveData();
+      status.style.color = "green";
+      status.textContent =
+        "Read confirmation recorded for all selected documents. You may close this window."; // <--CHANGED
+      setTimeout(() => window.close(), 1500);
+    } else {
+      status.style.color = "green";
+      status.textContent =
+        "All selected documents were already marked as read.";    // <--CHANGED
+    }
+  } catch (err) {
+    console.error("Email read confirm failed", err);
+    btn.disabled = false;
+    status.style.color = "red";
+    status.textContent =
+      "Failed to record read confirmation. Please try again later.";
+  }
+};
+
+
+  container.appendChild(heading);
+  container.appendChild(question);
+  container.appendChild(btn);
+  container.appendChild(status);
+  document.body.appendChild(container);
+}
+
+
+function showMessage(msg, isError=true){
+  messagesEl.style.color = isError ? 'red' : 'green';
+  messagesEl.textContent = msg;
+  messagesEl.style.display = 'block';
+  setTimeout(() => { messagesEl.style.display = 'none'; }, 4000);
+}
+
+function updateSelectAllStatus(){
+  const approvalCheckboxes = Array.from(document.querySelectorAll('.pendingApprovalCheckbox'));
+  const allApprovalsChecked = approvalCheckboxes.length > 0 && approvalCheckboxes.every(chk => chk.disabled || chk.checked || chk.parentElement.nextElementSibling.textContent !== '');
+  const noApprovalDocs = approvalCheckboxes.length === 0;
+  const readCheckboxes = Array.from(document.querySelectorAll('.pendingReadCheckbox'));
+  const allReadsChecked = readCheckboxes.length > 0 && readCheckboxes.every(chk => chk.disabled || chk.checked || chk.parentElement.nextElementSibling.textContent !== '');
+  const noReadDocs = readCheckboxes.length === 0;
+  if(noApprovalDocs || allApprovalsChecked){
+    selectAllPendingApprovalsCheckbox.checked = false;
+  }
+  if(noReadDocs || allReadsChecked){
+    selectAllPendingReadsCheckbox.checked = false;
+  }
+} 
+
+
+<!--CHANGED - HTML EMAIL WITH CLICKABLE LINKS VERSION-->
+async function submitAllRequests(requestType, docsOverride) {             <!--CHANGED-->
+  const selectedDocs = docsOverride ||                                   <!--CHANGED-->
+    Array.from(document.querySelectorAll('.docSelectCheckbox:checked'))  <!--CHANGED-->
+      .map(chk => chk.dataset.docname);                                  <!--CHANGED-->
+  
+  if (selectedDocs.length === 0) {
+    showMessage('No documents selected.', true);
+    return;
+  }
+
+  if (requestType === 'read') {
+    const notApproved = selectedDocs.filter(docName => {
+      const doc = documents.find(d => d.name === docName);
+      return !doc?.approvedAt;
+    });
+    if (notApproved.length > 0) {
+      showMessage(`Cannot send Read requests - Documents not approved: ${notApproved.slice(0,3).join(', ')}${notApproved.length > 3 ? '...' : ''}`, true);
+      return;
+    }
+  }
+ 
+
+  // HTML EMAIL WITH ACTION LINKS
+  let recipients = [];
+  let emailSubject = `📋 ${selectedDocs.length} Document ${requestType.toUpperCase()} Requests`;
+  let emailBodyLines = [
+    '<html><body style="font-family:Arial,sans-serif;line-height:1.6;">',
+    '<h2 style="color:#333;">📋 MULTIPLE DOCUMENTS - Action Required</h2>',
+    '<p style="color:#666;">Click the buttons below to take action (no login required):</p>',
+    '<table border="1" cellpadding="12" cellspacing="0" style="border-collapse:collapse;width:100%;">',
+    '<tr><th style="background:#4CAF50;color:white;padding:12px;">Document</th><th style="background:#4CAF50;color:white;padding:12px;">Action</th></tr>'
+  ];
+  
+  const appBaseUrl = window.location.origin;
+  
+  selectedDocs.forEach(docName => {
+    const doc = documents.find(d => d.name === docName);
+    if (!doc) return;
+
+    let actionLink = '', corpId = '';
+    
+    if (requestType === 'review') {
+    const author = users.find(u => u.corpId === doc.author);
+    const reviewer = users.find(u => u.corpId === doc.reviewer);
+    if (author?.email) recipients.push(author.email);
+    if (reviewer?.email) recipients.push(reviewer.email);
+    const corpId = author?.corpId || reviewer?.corpId; // USER
+    const docsParam = encodeURIComponent(selectedDocs.join(","));           <!--CHANGED-->
+    const sentAt = new Date().toISOString();                                <!--CHANGED-->
+    actionLink =
+      `<a href="${appBaseUrl}?reviewDocs=${docsParam}` +                    <!--CHANGED-->
+      `&userCORPID=${encodeURIComponent(corpId)}` +                         <!--CHANGED-->
+      `&sentAt=${encodeURIComponent(sentAt)}"` +                            <!--CHANGED-->
+      ` style="background:#4CAF50;color:white;padding:10px 20px;text-decoration:none;border-radius:6px;font-weight:bold;display:inline-block"` +
+      ` onclick="setTimeout(window.close,1500)">` +
+      `Click here to Acknowledge Review</a>`;
+  }
+
+else if (requestType === 'approval') {
+  const approvers = doc.approvers?.filter(Boolean) || [];
+  const approverEmails = approvers
+    .map(cid => users.find(u => u.corpId === cid)?.email)
+    .filter(Boolean);
+  if (approverEmails.length) recipients.push(...approverEmails);
+  const corpId = approvers[0]; // USER
+  const docsParam = encodeURIComponent(selectedDocs.join(","));           // <--OK
+  const sentAt = new Date().toISOString();                                // <--OK
+  actionLink =
+    `<a href="${appBaseUrl}?approveDocs=${docsParam}` +                   // <--OK
+    `&approverCORPID=${encodeURIComponent(corpId)}` +                     // <--OK
+    `&sentAt=${encodeURIComponent(sentAt)}"` +                            // <--OK
+    ` style="background:#2196F3;color:white;padding:10px 20px;text-decoration:none;border-radius:6px;font-weight:bold;display:inline-block"` +
+    ` onclick="setTimeout(window.close,1500)">` +
+    `here</a>`;                                                           <!--CHANGED-->
+
+
+} else if (requestType === 'read') {
+  const allUserEmails = users.filter(u => u.email).map(u => u.email);
+  if (allUserEmails.length) recipients.push(...allUserEmails);
+  const corpId = currentUser?.corpId; // USER
+  const docsParam = encodeURIComponent(selectedDocs.join(","));           // <--CHANGED
+  const sentAt = new Date().toISOString();                                // <--CHANGED
+  actionLink =
+    `<a href="${appBaseUrl}?readDocs=${docsParam}` +                      // <--CHANGED
+    `&userCORPID=${encodeURIComponent(corpId)}` +                         <!--CHANGED from readerCORPID-->
+    `&sentAt=${encodeURIComponent(sentAt)}"` +                            // <--CHANGED
+    ` style="background:#FF9800;color:white;padding:10px 20px;text-decoration:none;border-radius:6px;font-weight:bold;display:inline-block"` +
+    ` onclick="setTimeout(window.close,1500)">` +
+    `here</a>`;                                                           <!--CHANGED-->
+}
+
+    
+    emailBodyLines.push(`<tr style="background:#f9f9f9;"><td style="padding:12px;font-family:monospace;">${doc.name}</td><td style="padding:12px;text-align:center;">${actionLink}</td></tr>`);
+  });
+  
+  emailBodyLines.push('</table><br><p style="color:#666;"><strong>Document Control System</strong></p></body></html>');
+
+  recipients = [...new Set(recipients)].filter(Boolean).join(';');
+  
+  if (!recipients) {
+    showMessage('No valid email recipients found.', true);
+    return;
+  }
+
+    // OPEN OUTLOOK WITH HTML EMAIL
+  window.open(`mailto:${recipients}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBodyLines.join('\n'))}`, '_blank');
+  
+ // UPDATE DATABASE (Supabase-SAFE - NO timestamps)
+selectedDocs.forEach(docName => {
+  const doc = documents.find(d => d.name === docName);
+  if (!doc) return;
+  
+  if (!approvals[docName]) approvals[docName] = {};
+  const approvalData = approvals[docName];
+
+  approvalData.reviewRequestedBy  = approvalData.reviewRequestedBy  || [];   <!--CHANGED-->
+  approvalData.approveRequestedBy = approvalData.approveRequestedBy || [];   <!--CHANGED-->
+  approvalData.readRequestedBy    = approvalData.readRequestedBy    || [];   <!--CHANGED-->
+
+
+  
+  if (requestType === 'review') {
+    approvalData.reviewRequestedBy = [doc.author, doc.reviewer]              <!--CHANGED-->
+      .filter(Boolean)                                                       <!--CHANGED-->
+      .map(cid => cid.toLowerCase());                                        <!--CHANGED-->
+    doc.assignedUsers = [doc.author, doc.reviewer]                           <!--CHANGED-->
+      .filter(Boolean)                                                       <!--CHANGED-->
+      .map(cid => cid.toLowerCase());                                        <!--CHANGED-->
+    // NO: approvalData.reviewRequestSentAt
+  } else if (requestType === 'approval') {
+    const targets = (doc.approvers || []).filter(Boolean);                   <!--CHANGED-->
+    approvalData.approveRequestedBy = targets.map(cid => cid.toLowerCase()); <!--CHANGED-->
+    doc.assignedUsers = targets.map(cid => cid.toLowerCase());               <!--CHANGED-->
+    // NO: approvalData.approvalRequestSentAt
+  } else if (requestType === 'read') {
+    const allUserCids = users.map(u => u.corpId.toLowerCase());              <!--CHANGED-->
+    approvalData.readRequestedBy = allUserCids;                              <!--CHANGED-->
+    doc.assignedUsers = allUserCids;                                         <!--CHANGED-->
+    // NO: approvalData.readRequestSentAt
+  }
+});
+
+  
+  await saveData();
+  renderDocumentsTable(currentPage);
+  renderUserReviews();  
+  renderUserReads();                                                     
+  showMessage(`✅ ${requestType.toUpperCase()} emails sent WITH clickable links! (${recipients.split(';').length} recipients, ${selectedDocs.length} docs)`, false);
+}
+
+
+
+function formatDate(dateStr){
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-GB') + ' ' + date.toLocaleTimeString('en-GB');
+}
+
+function formatDateNextReviewDate(dateStr) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-GB');
+}
+
+
+window.acknowledgeReview = function(docName, corpId) {
+    const user = users.find(u => u.corpId === corpId);
+    markDocumentReviewForUser(docName, corpId, user?.fullName || corpId);
+};
+
+function initReadRequestHandlers() {
+  const existing = document.querySelector('.btn-submit-read')
+  if (existing) return;
+  document.addEventListener('click', readClickHandler)
+  document.addEventListener('contextmenu', readContextHandler)
+}
+
+let readClickHandler = async function(e) {
+  if (e.target.classList.contains('btn-submit-read')) {
+    const docName = e.target.getAttribute('data-docname')
+    const doc = documents.find(d => d.name === docName)
+    if (!doc || !currentUser) return
+    const approvalData = approvals[docName] || {}
+    if (!doc.approvedAt && !approvalData.approvedBy?.length) {
+      showMessage('Document must be approved first!', true)
+      return
+    }
+
+    const allUsers = users.filter(u => u.email)                    // <-- context
+    approvals[docName] = approvals[docName] || {}                  // <-- context
+
+    // Mark request as sent and assign users                        // <--NEW INSERT
+    approvals[docName].readRequestSentAt = new Date().toISOString(); // <--NEW INSERT
+    approvals[docName].readRequestedBy = allUsers.map(             // <--NEW INSERT
+      u => u.corpId.toLowerCase()                                  // <--NEW INSERT
+    );                                                             // <--NEW INSERT
+    doc.assignedUsers = allUsers.map(u => u.corpId.toLowerCase()); // <--NEW INSERT
+
+    await saveData()
+    renderDocumentsTable(currentPage)
+    showMessage('Read request will be sent automatically 10 minutes after approval.', false)
+  }
+}
+let readContextHandler = function(e) {
+  if (e.target.classList.contains('read-timestamp')) {
+    e.preventDefault()
+    const docName = e.target.getAttribute('data-docname')
+    const approvalData = approvals[docName] || {}
+    const readRequestedBy = approvalData.readRequestedBy || []
+    const readBy = approvalData.readBy || []
+    const pending = readRequestedBy.filter(cid => !readBy.some(r => r.corpId.toLowerCase() === cid))
+    const pendingNames = pending.map(cid => users.find(u => u.corpId.toLowerCase() === cid)?.fullName || cid).join(', ')
+    showMessage(pending.length === 0 ? 'All users read' : `${pendingNames} pending`, true)
+  }
+}
+
+window.markReadFromEmail = async function(docName) {
+  const corpId = prompt('Enter your CORP ID:')
+  if (!corpId) return
+  const user = users.find(u => u.corpId.toLowerCase() === corpId.toLowerCase())
+  if (!user) return alert('User not found')
+  approvals[docName] = approvals[docName] || {}
+  if (!approvals[docName].readBy?.some(r => r.corpId === user.corpId)) {
+    approvals[docName].readBy = approvals[docName].readBy || []
+    approvals[docName].readBy.push({corpId: user.corpId, fullName: user.fullName, timestamp: new Date().toLocaleString()})
+    await saveData()
+    alert('Document marked as read!')
+    setTimeout(() => window.close(), 1000)
+  } else {
+    alert('Already marked as read!')
+  }
+}
+
+
+</script>
+</body>
+</html>
